@@ -1,0 +1,49 @@
+title: "Ronik's Blog"
+author: "Ronik Bhattacharjee"
+description: "My Blog Site" # This will show up in places like twitter, linkedin, etc, if you share your sites url as a post.
+
+# Email / Social media user names used by the minima theme:
+# All of these are optional and can be removed or commented out
+email: "dvorak22112000@gmail.com"
+twitter_username: "Ronik_DVR"
+github_username: "Ronik22"
+linkedin_username: "ronikb22"
+#facebook_username: username
+#flickr_username: username
+#instagram_username: username
+#pinterest_username: username
+#youtube_username: username
+#googleplus_username: +username
+
+#########################################################################################
+######### Nothing below needs to be changed (unless you know what you're doing) #########
+#########################################################################################
+theme: "minima"
+
+rss: rss
+
+kramdown:
+  syntax_highlighter_opts:
+    disable: true
+    
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+
+titles_from_headings:
+  strip_title: true
+  collections: true
+
+# Add a search button to the navbar
+post_search: true
+
+url: https://ronikb.ml
+
+baseurl: /blog
+
+defaults:
+  - scope:
+      path: ""
+      type: post
+    values:
+      tags: Other
