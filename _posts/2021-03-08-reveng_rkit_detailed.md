@@ -1283,8 +1283,8 @@ B) **getdents64** syscall: [elixir.bootlin](https://elixir.bootlin.com/linux/v5.
 
 I actually wanted to hide ongoing processes and I got that idea for hiding processes from [source1: R3x/linux-rootkits](https://github.com/R3x/linux-rootkits#features-descriptions), but I was unable to understand that portion of code which was linked. I then searched through other [resource links](https://github.com/reveng007/reveng_rtkit#resources-that-helped-me) that I had. I found out this: [source2](https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#II.5.1.). I will be implementing this mechanism via **kill syscall** (or sys_kill) as I did earlier.
           
-But here, we are actually intercepting two syscalls simultaneously,\
-1. ***kill syscall***: To hide pid of any process, cmd: _`kill -32 <pid>`_.\
+But here, we are actually intercepting two syscalls simultaneously,
+1. ***kill syscall***: To hide pid of any process, cmd: _`kill -32 <pid>`_.
 2. ***getdents64 syscall***: Please go through this [link](https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#II.5.1.) (it is the same previous link) and check the last 2 paragraphs of it. It will say that, `ps` command only just does an 'ls' on "`/proc/`" directory.
 
 Now then, what is the working machanism of `ls`?\
@@ -1361,13 +1361,14 @@ Dependent registers:
 ```
 In this scenario, we will only need **rdi** and **rsi** register. This is because, we need to know the passed argument (**rsi** register, rather **si** register) and as we will be dealing with files, we will ofcourse be needing the file descriptors (**rdi** register, rather **di** register). (Reason was mentioned earlier in this file)
 
-So, a recap about the Workflow of the machanism:\
+So, a recap about the Workflow of the machanism:
 - When we deliver pid of any process via `kill -32 <pid>`, it will at first find out that particular `pid` by surfing through "`/proc/`" directory.
 - After getting the `pid`, it will perform syscall hooking to hide that particular pid and then offering a new process list (excluding the mentioned pid), if the user tries to see running processes using ***ps***.
 
 1. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L99).\
 Finding the process id/ pid:\
 According to [LKM_HACKING](https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#II.5.1.):
+
 ```c
 /* Here, -"&gt;" is the html character entities, which really mean: -">" 
 I really don't know, how it happened in that site */
