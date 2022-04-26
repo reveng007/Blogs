@@ -39,7 +39,7 @@ And as it is related to manipulating linux kernel workings, I threw spotlight ov
 
 ------
 ------
-#### Part1: Basics regrading LKM creation
+#### Part1: <ins>Basics regrading LKM creation</ins>:
    1. LKM creation: I followed [thegeekstuff](https://www.thegeekstuff.com/2012/04/linux-lkm-basics/) and pentesteracademy's [github-001](https://github.com/pentesteracademy/linux-rootkits-red-blue-teams/tree/master/001-helloworld)
    1. Information about `print in kernel` (aka printk): [kernel.org](https://www.kernel.org/doc/html/latest/core-api/printk-basics.html) and pentesteracademy's [github-002](https://github.com/pentesteracademy/linux-rootkits-red-blue-teams/tree/master/003-helloworld-printk)
 
@@ -92,7 +92,7 @@ fs => file system
 ```
 ##### So, let's hide it...
 -----
-#### Part2: Hiding LKM from _lsmod_,  _/proc/modules_ file, _/proc/kallsyms_ file and _/sys/module/[THIS_MODULE]/_ directory:
+#### Part2: <ins>Hiding LKM from _lsmod_,  _/proc/modules_ file, _/proc/kallsyms_ file and _/sys/module/[THIS_MODULE]/_ directory</ins>:
 
 We can eradicate first <ins>three problems</ins> by simply deleting **our rootkit module** from that _structure_ which is responsible for storing it as a **LKM**.
 
@@ -325,8 +325,8 @@ struct kobject {
 ##### But there is a problem to use this function. We cannot re-enable our LKM rootkit to `show` mode again, i.e., we can't `rmmod` the rootkit according to our will. The only way left is rebooting the whole machine. link: [reveng_rtkit repo](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/reveng_rtkit.c#L94). I will explain it later in this blog.
 
 ----
-#### Part3: Revealing LKM from _lsmod_,  _/proc/modules_ file, _/proc/kallsyms_ file and _/sys/module/[THIS_MODULE]/_ directory according to our will:
-A) Targeting _"lsmod"_, _"/proc/modules"_ file, and _"/proc/kallsyms"_ file
+#### Part3: <ins>Revealing LKM from _lsmod_,  _/proc/modules_ file, _/proc/kallsyms_ file and _/sys/module/[THIS_MODULE]/_ directory according to our will</ins>:
+A) <ins>Targeting _"lsmod"_, _"/proc/modules"_ file, and _"/proc/kallsyms"_ file</ins>:
 
 Function name, where it is implemented in my project: [proc_lsmod_show_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L125)
 1. In `proc_lsmod_show_rootkit()`, our rootkit module is just added back to main list of modules, where it was previously.
@@ -351,7 +351,7 @@ static inline void list_add(struct list_head *new, struct list_head *head)
 }
 ```
 ----
-B) Targeting _"/sys/module/"_ directory:
+B) <ins>Targeting _"/sys/module/"_ directory</ins>:
 
 Function name, where it is implemented in my project: [sys_module_show_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L155)
 
@@ -381,7 +381,7 @@ This the reason why I have added this [NOTE](https://github.com/reveng007/reveng
 If you viewers have any idea of how to hide our LKM from `/sys/module/` without creating any discrepancies, in order to deceive usermode programs, please let me know. If I get any other method to get away with this very scenario, I will be updating my LKM rootkit as well as this blog based on that.
 
 ----
-#### Part4: Protecting LKM from from being rmmod'ed (or unremovable):
+#### Part4: <ins>Protecting LKM from from being rmmod'ed (or unremovable)</ins>:
 
 Function name, where it is implemented in my project: [protect_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/reveng_rtkit.c#L165)
 I took this concept from [nurupo's](https://github.com/nurupo) repo named: [rootkit](https://github.com/nurupo/rootkit/blob/56c43b3cc74f0db4739065d9276fcf1236273c5a/rootkit.c#L606). We will be using `try_module_get()` kernel function from `module.h` library in order to protect our LKM rootkit from being rmmod'ed.
@@ -395,7 +395,7 @@ I took this concept from [nurupo's](https://github.com/nurupo) repo named: [root
 extern bool try_module_get(struct module *module);
 ```
 ----
-#### Part5: Making LKM removable from kernel (Incase needed):
+#### Part5: <ins>Making LKM removable from kernel (Incase needed)</ins>:
 
 Function name, where it is implemented in my project: [remove_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/reveng_rtkit.c#L188)
 
@@ -409,7 +409,7 @@ extern void module_put(struct module *module);
 ```
 -----
 
-#### Part6: Providing rootshell to the attacker:
+#### Part6: <ins>Providing rootshell to the attacker</ins>:
 
 Function name, where it is implemented in my project: [set_root()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hook_syscall_helper.h#L237). 
 
@@ -455,7 +455,7 @@ If you now go and check out my code portion, you will understand the scenario.
 
 ---------
 
-#### Part7: Interracting with LKM in **kernel** from **Userspace**:
+#### Part7: <ins>Interracting with LKM in **kernel** from **Userspace**</ins>:
 
 Till now, We all came to know how to do stuff in kernel using LKM rootkit. But how to control the LKM rootkit? how to send command to the rootkit via userspace?
 
@@ -516,7 +516,7 @@ OR,
 For more information about Linux Log level: [visit-linuxconfig.org](https://linuxconfig.org/introduction-to-the-linux-kernel-log-levels).
 
 -----
-Let's discuss the ***IOCTL method in LKM*** bit by bit:
+Let's discuss the ***IOCTL method in LKM*** bit by bit:\
 a) Use cases of the libraries that were used for IOCTL purposes:
 ```c
 #include <linux/fs.h>           /* Related to file structure */
