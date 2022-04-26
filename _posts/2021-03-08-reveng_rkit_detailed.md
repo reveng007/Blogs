@@ -30,18 +30,18 @@ And as it is related to manipulating linux kernel workings, I threw spotlight ov
 ----------
 ## Parts:
 1. Part1: Basics regrading LKM creation
-2. Part2: Hiding LKM from _lsmod_,  _/proc/modules_ file, _/proc/kallsyms_ file and _/sys/module/[THIS_MODULE]/_ directory
-3. Part3: Revealing LKM from _lsmod_, _/proc/modules_ file, _/proc/kallsyms_ file and _/sys/module/[THIS_MODULE]/_ directory according to our will
-4. Part4: Protecting LKM from from being rmmod'ed (or unremovable)
-5. Part5: Making LKM removable from kernel (Incase needed)
-6. Part6: Providing rootshell to the attacker
-7. Part7: Interracting with LKM (which is present in **kernel**) from **Userspace**
+1. Part2: Hiding LKM from _lsmod_,  _/proc/modules_ file, _/proc/kallsyms_ file and _/sys/module/[THIS_MODULE]/_ directory
+1. Part3: Revealing LKM from _lsmod_, _/proc/modules_ file, _/proc/kallsyms_ file and _/sys/module/[THIS_MODULE]/_ directory according to our will
+1. Part4: Protecting LKM from from being rmmod'ed (or unremovable)
+1. Part5: Making LKM removable from kernel (Incase needed)
+1. Part6: Providing rootshell to the attacker
+1. Part7: Interracting with LKM (which is present in **kernel**) from **Userspace**
 
 ------
 ------
 #### Part1: Basics regrading LKM creation
-1. LKM creation: I followed [thegeekstuff](https://www.thegeekstuff.com/2012/04/linux-lkm-basics/) and pentesteracademy's [github-001](https://github.com/pentesteracademy/linux-rootkits-red-blue-teams/tree/master/001-helloworld)
-2. Information about `print in kernel` (aka printk): [kernel.org](https://www.kernel.org/doc/html/latest/core-api/printk-basics.html) and pentesteracademy's [github-002](https://github.com/pentesteracademy/linux-rootkits-red-blue-teams/tree/master/003-helloworld-printk)
+   1. LKM creation: I followed [thegeekstuff](https://www.thegeekstuff.com/2012/04/linux-lkm-basics/) and pentesteracademy's [github-001](https://github.com/pentesteracademy/linux-rootkits-red-blue-teams/tree/master/001-helloworld)
+   1. Information about `print in kernel` (aka printk): [kernel.org](https://www.kernel.org/doc/html/latest/core-api/printk-basics.html) and pentesteracademy's [github-002](https://github.com/pentesteracademy/linux-rootkits-red-blue-teams/tree/master/003-helloworld-printk)
 
 So, if you have followed those links throughly, I think you are good to go.!
 We created a LKM which can be run in kernel (we will only use KERN_INFO/pr_info, we won't be using KERN_ALERT and KERN_EMERG, etc. in our rootkit LKM ):
