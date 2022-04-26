@@ -1030,7 +1030,7 @@ line2 :&nbsp; `int sig = (int) pt_regs->si` => Stores the passed argument, in th
 
 Now, if the passed argument/ signal (or sig) is same as `GET_ROOT` (which is a macro defined) then we are gifted with a _rootshell_.
 
-#### Now the question comes, "Why _`si`_ register, why not _`rsi`_ register?"\
+#### Now the question comes, "Why _`si`_ register, why not _`rsi`_ register?"
 ***Ans***: Please follow the [commented lines](https://github.com/torvalds/linux/blob/15bc20c6af4ceee97a1f90b43c0e386643c071b4/arch/x86/include/asm/ptrace.h#L12).
 
 I have told you earlier that the function type of original syscall must be same as the created syscall.
@@ -1190,7 +1190,7 @@ static inline void unprotect_memory(void)
 ```
 Here, the type of this function is `asmlinkage int`, actually it doesn't matter in this context, but it might in others.\
 Syscalls are of type `long`, thus, when a user space program such as glibc depends on its return value, it expects a `long int`, if you feed it with `int`, things will go very wrong.\
-Credit: [jm33.me/](https://jm33.me/linux-rootkit-for-fun-and-profit-0x02-lkm-hide-filesprocs.html)
+Credit: [jm33.me](https://jm33.me/linux-rootkit-for-fun-and-profit-0x02-lkm-hide-filesprocs.html)
 ```c
 // filename: Test_rtkit_kill.c
 
@@ -1274,9 +1274,9 @@ MODULE_VERSION("1.0");
 Now, lets see it in action:\
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog13.png?raw=true)
 
-We can see 3 things:\
-1. In ***fish shell***, this mechanism of getting root shell is not working, I don't really know why... (<ins>If any viewers seeing this, have any solution to this problem, please don't hesitate to do a PR to my repo but before that please visit, [idea](https://github.com/reveng007/reveng_rtkit#note-1)</ins>).\
-2. In ***bash shell***, it is working as expected.\
+We can see 3 things:
+1. In ***fish shell***, this mechanism of getting root shell is not working, I don't really know why... (<ins>If any viewers seeing this, have any solution to this problem, please don't hesitate to do a PR to my repo but before that please visit, [idea](https://github.com/reveng007/reveng_rtkit#note-1)</ins>).
+2. In ***bash shell***, it is working as expected.
 3. In ***sh shell***, it is working as expected too.
 
 B) **getdents64** syscall: [elixir.bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/syscalls.h#L487)
