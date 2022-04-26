@@ -161,7 +161,7 @@ image:
 
 > Now we can hide our rootkit LKM from **_`lsmod`_ command, _`/proc/modules`_ file (procfs)** and **_`/proc/kallsyms`_ file (procfs) !**
 
-2. <ins>Targeting _/sys/modules_ directory</ins>
+1. <ins>Targeting _/sys/modules_ directory</ins>
 
 Function name, where it is implemented in my project: [sys_module_hide_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L85)
 
@@ -292,7 +292,8 @@ struct kobject {
 // parameter to be inputed to kobject_del():
 &THIS_MODULE->mkobj.kobj
 ```
-2. Delete the kobject, which is mapped by our rootkit LKM from "entry" list using `list_del()`. We will be using the same `list_del()` function that we used before to delete our rootkit LKM from _`lsmod`_ command, _`/proc/modules`_ file (procfs) and _`/proc/kallsyms`_ file (procfs), but this time with different <ins>parameter value</ins>. [source: [page-6-last-paragraph](https://theswissbay.ch/pdf/Whitepaper/Writing%20a%20simple%20rootkit%20for%20Linux%20-%20Ormi.pdf)]
+1. Delete the kobject, which is mapped by our rootkit LKM from "entry" list using `list_del()`. We will be using the same `list_del()` function that we used before to delete our rootkit LKM from _`lsmod`_ command, _`/proc/modules`_ file (procfs) and _`/proc/kallsyms`_ file (procfs), but this time with different <ins>parameter value</ins>. [source: [page-6-last-paragraph](https://theswissbay.ch/pdf/Whitepaper/Writing%20a%20simple%20rootkit%20for%20Linux%20-%20Ormi.pdf)].
+
 ```c
 // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kobject.h
 // elixir.bootlin: pattern: entry
@@ -307,19 +308,18 @@ struct kobject {
 //parameter to be inputed to list_del() in this scenario:
 /*
 * 1. THIS_MODULE
-* 2. mkobj
-* 3. kobj
-* 4. entry
+* 1. mkobj
+* 1. kobj
+* 1. entry
 */
 
 &THIS_MODULE->mkobj.kobj.entry
 ```
+
 1st three, (1,2,3) are just the same as previous case. Just adding `entry` in this context.
     
 > Now we can hide our rootkit LKM from **`/sys/module/`** directory (_LKM logging directory_) !
-
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog8.png?raw=true)
-
 ##### But there is a problem to use this function. We cannot re-enable our LKM rootkit to `show` mode again, i.e., we can't `rmmod` the rootkit according to our will. The only way left is rebooting the whole machine. link: [reveng_rtkit repo](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/reveng_rtkit.c#L94). I will explain it later in this blog.
 
 ----
