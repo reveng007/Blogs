@@ -718,6 +718,7 @@ For storing address of sys_call_table
 unsigned long *syscall_table;
 ```
 As kallsyms function is not exported anymore by default, we are creating our own custom made function to get the address of the original `kallsyms_lookup_name`.
+
 ```c
 /* // Lookup the address for a symbol. Returns 0 if not found.
 * unsigned long kallsyms_lookup_name(const char *name);
