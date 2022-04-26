@@ -73,14 +73,14 @@ Other three methods are:
 
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog3.png?raw=true)
 
-2. _`/proc/kallsyms`_ file (procfs)
+1. _`/proc/kallsyms`_ file (procfs)
     - Extracts and stores all the non-stack/dynamically loaded kernel modules symbols and builds a data blob that can be linked into that kernel for use by debuggers.
     - In other words, it has the whole kernel mapping in one place.
     - This means, this file will also store symbols from our already loaded rootkit LKM.
 
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog4.png?raw=true)
 
-3. _`/sys/module/[THIS_MODULE]/`_ directory (sysfs)
+1. _`/sys/module/[THIS_MODULE]/`_ directory (sysfs)
     - It is also a virtual filesystem resides in RAM.
     - The only difference between sysfs and procfs is the ***mapping capability*** of sysfs.
     - It maps <ins>kernel subsystem</ins>, <ins>device drivers</ins> in their <ins>hierarchical order</ins>.
@@ -111,7 +111,7 @@ The way to use elixir.bootlin:
 
 You can also use linux local source code which comes prepackaged with very linux distribution. To access those source code, jump move to `/lib/modules/<kernel version>/build/include/` directory. To search through those would be quite hectic, rather following elixir.bootlin would be my suggesion.
 
-1. Targeting _"lsmod"_, _"/proc/modules"_ file, and _"/proc/kallsyms"_ file
+1. <ins>Targeting _"lsmod"_, _"/proc/modules"_ file, and _"/proc/kallsyms"_ file</ins>
 
 &nbsp;
   Function name, where it is implemented in my project: [proc_lsmod_hide_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L45)
@@ -120,56 +120,55 @@ You can also use linux local source code which comes prepackaged with very linux
   We will be deleting our rootkit module from `list` right? Here, THIS_MODULE is acting as a pointer to a "module structure". Our rootkit module will be represented by THIS_MODULE.
 &nbsp;
 ```c
-    // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/module.h
-    // elixir.bootlin: pattern: module
+// pwd: /lib/modules/5.11.0-49-generic/build/include/linux/module.h
+// elixir.bootlin: pattern: module
 
-    struct module {
-    ...
-    /* Member of list of modules */
-    struct list_head list;
-    ...
-    };
-    ```
-    `struct list_head` can be found in header file named ***"list.h"***.
-    ```c
-    // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/list.h
-    // elixir.bootlin: pattern: list
+struct module {
+   ...
+   /* Member of list of modules */
+   struct list_head list;
+   ...
+};
+```
+`struct list_head` can be found in header file named ***"list.h"***.
+```c
+// pwd: /lib/modules/5.11.0-49-generic/build/include/linux/list.h
+// elixir.bootlin: pattern: list
 
-    struct list_head {
-        struct list_head *next, *prev;
-    };
+struct list_head {
+	struct list_head *next, *prev;
+};
 ```
 We're gonna delete our rootkit LKM using `list_del()`, which is present in the very same header file.
 ```c
-    // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/list.h
-    // elixir.bootlin: pattern: list
+// pwd: /lib/modules/5.11.0-49-generic/build/include/linux/list.h
+// elixir.bootlin: pattern: list
 
-    /**
-    * list_del - deletes entry from list.
-    * @entry: the element to delete from the list.
-    * Note: list_empty() on entry does not return true after this, the entry is
-    * in an undefined state.
-    */
+	/**
+	 * list_del - deletes entry from list.
+	 * @entry: the element to delete from the list.
+	 * Note: list_empty() on entry does not return true after this, the entry is
+	 * in an undefined state.
+	 */
     
-    static inline void list_del(struct list_head *entry)
-    {
-      __list_del_entry(entry);
-      entry->next = LIST_POISON1;
-      entry->prev = LIST_POISON2;
-    }
+static inline void list_del(struct list_head *entry)
+{
+	__list_del_entry(entry);
+	entry->next = LIST_POISON1;
+	entry->prev = LIST_POISON2;
+}
 ```
 So,
 ```
-    // parameter to be inputed to list_del():
-
-    &THIS_MODULE->list
+// parameter to be inputed to list_del():
+&THIS_MODULE->list
 ```
 image:
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog7.png?raw=true)
 
 > ***Now we can hide our rootkit LKM from **_`lsmod`_ command, _`/proc/modules`_ file (procfs)** and **_`/proc/kallsyms`_ file (procfs) !***
 
-2. Targeting _/sys/modules_ directory
+2. <ins>Targeting _/sys/modules_ directory</ins>
 
     Function name, where it is implemented in my project: [sys_module_hide_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L85)
 
