@@ -69,22 +69,22 @@ $ lsmod
 Other three methods are:
 
 1. _`/proc/modules`_ file (procfs)
-    - It is actually a virtual filesystem resides in RAM which shows all **User** as well as **Kernel mode** running processes to _User mode side users_.
+- It is actually a virtual filesystem resides in RAM which shows all **User** as well as **Kernel mode** running processes to _User mode side users_.
 
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog3.png?raw=true)
 
 2. _`/proc/kallsyms`_ file (procfs)
-    - Extracts and stores all the non-stack/dynamically loaded kernel modules symbols and builds a data blob that can be linked into that kernel for use by debuggers.
-    - In other words, it has the whole kernel mapping in one place.
-    - This means, this file will also store symbols from our already loaded rootkit LKM.
+- Extracts and stores all the non-stack/dynamically loaded kernel modules symbols and builds a data blob that can be linked into that kernel for use by debuggers.
+- In other words, it has the whole kernel mapping in one place.
+- This means, this file will also store symbols from our already loaded rootkit LKM.
 
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog4.png?raw=true)
 
 3. _`/sys/module/[THIS_MODULE]/`_ directory (sysfs)
-    - It is also a virtual filesystem resides in RAM.
-    - The only difference between sysfs and procfs is the ***mapping capability*** of sysfs.
-    - It maps <ins>kernel subsystem</ins>, <ins>device drivers</ins> in their <ins>hierarchical order</ins>.
-    - Each entry in `/sys` is represented by **kobject structure**. Each module has its <ins>own kobject</ins>.
+- It is also a virtual filesystem resides in RAM.
+- The only difference between sysfs and procfs is the ***mapping capability*** of sysfs.
+- It maps <ins>kernel subsystem</ins>, <ins>device drivers</ins> in their <ins>hierarchical order</ins>.
+- Each entry in `/sys` is represented by **kobject structure**. Each module has its <ins>own kobject</ins>.
 
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog5.png?raw=true)
 
