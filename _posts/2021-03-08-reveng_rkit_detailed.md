@@ -36,6 +36,7 @@ And as it is related to manipulating linux kernel workings, I threw spotlight ov
 5. Part5: Making LKM removable from kernel (Incase needed)
 6. Part6: Providing rootshell to the attacker
 7. Part7: Interracting with LKM (which is present in **kernel**) from **Userspace**
+
 ------
 ------
 #### Part1: Basics regrading LKM creation
