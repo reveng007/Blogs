@@ -106,7 +106,7 @@ The way to use elixir.bootlin:
 
 You can also use linux local source code which comes prepackaged with very linux distribution. To access those source code, jump move to `/lib/modules/<kernel version>/build/include/` directory. To search through those would be quite hectic, rather following elixir.bootlin would be my suggesion.
 
-1. <ins>Targeting _"lsmod"_, _"/proc/modules"_ file, and _"/proc/kallsyms"_ file</ins>
+A) <ins>Targeting _"lsmod"_, _"/proc/modules"_ file, and _"/proc/kallsyms"_ file</ins>
 
 Function name, where it is implemented in my project: [proc_lsmod_hide_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L45)
 
@@ -161,7 +161,7 @@ image:
 
 > Now we can hide our rootkit LKM from **_`lsmod`_ command, _`/proc/modules`_ file (procfs)** and **_`/proc/kallsyms`_ file (procfs) !**
 
-1. <ins>Targeting _/sys/modules_ directory</ins>
+B) <ins>Targeting _/sys/modules_ directory</ins>
 
 Function name, where it is implemented in my project: [sys_module_hide_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L85)
 
@@ -233,7 +233,7 @@ In header file named ***"kobject.h"***, structure named, **struct kobject** is p
     
 We're gonna delete 2 things:
 
-1. Delete our rootkit LKM from **`/sys/module/`** directory with the help of `kobject_del()`.\
+a) Delete our rootkit LKM from **`/sys/module/`** directory with the help of `kobject_del()`.\
 But what will be our <ins>parameter value</ins>?
 
 We will be deleting our module right? It will be expressed by `THIS_MODULE`. So we will deleting `THIS_MODULE` in such a way that kobject related to it also gets deleted.
@@ -292,7 +292,7 @@ struct kobject {
 // parameter to be inputed to kobject_del():
 &THIS_MODULE->mkobj.kobj
 ```
-1. Delete the kobject, which is mapped by our rootkit LKM from "entry" list using `list_del()`. We will be using the same `list_del()` function that we used before to delete our rootkit LKM from _`lsmod`_ command, _`/proc/modules`_ file (procfs) and _`/proc/kallsyms`_ file (procfs), but this time with different <ins>parameter value</ins>. [source: [page-6-last-paragraph](https://theswissbay.ch/pdf/Whitepaper/Writing%20a%20simple%20rootkit%20for%20Linux%20-%20Ormi.pdf)].
+b) Delete the kobject, which is mapped by our rootkit LKM from "entry" list using `list_del()`. We will be using the same `list_del()` function that we used before to delete our rootkit LKM from _`lsmod`_ command, _`/proc/modules`_ file (procfs) and _`/proc/kallsyms`_ file (procfs), but this time with different <ins>parameter value</ins>. [source: [page-6-last-paragraph](https://theswissbay.ch/pdf/Whitepaper/Writing%20a%20simple%20rootkit%20for%20Linux%20-%20Ormi.pdf)].
 
 ```c
 // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kobject.h
@@ -308,9 +308,9 @@ struct kobject {
 //parameter to be inputed to list_del() in this scenario:
 /*
 * 1. THIS_MODULE
-* 1. mkobj
-* 1. kobj
-* 1. entry
+* 2. mkobj
+* 3. kobj
+* 4. entry
 */
 
 &THIS_MODULE->mkobj.kobj.entry
@@ -324,10 +324,9 @@ struct kobject {
 
 ----
 #### Part3: Revealing LKM from _lsmod_,  _/proc/modules_ file, _/proc/kallsyms_ file and _/sys/module/[THIS_MODULE]/_ directory according to our will:
-1. Targeting _"lsmod"_, _"/proc/modules"_ file, and _"/proc/kallsyms"_ file
+A) Targeting _"lsmod"_, _"/proc/modules"_ file, and _"/proc/kallsyms"_ file
 
 Function name, where it is implemented in my project: [proc_lsmod_show_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L125)
-
 1. In `proc_lsmod_show_rootkit()`, our rootkit module is just added back to main list of modules, where it was previously.
 1. We will actually store the location of the previously loaded LKM so that we can add our loaded rootkit LKM just after that particular stored location, later according to our need. This also helps to preserve the <ins>Serial order of our rootkit LKM</ins> to avoid suspicion.
 
@@ -350,42 +349,39 @@ static inline void list_add(struct list_head *new, struct list_head *head)
 }
 ```
 ----
-2. Targeting _"/sys/module/"_ directory:
+B) Targeting _"/sys/module/"_ directory:
 
-    Function name, where it is implemented in my project: [sys_module_show_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L155)
+Function name, where it is implemented in my project: [sys_module_show_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L155)
 
-    I have told you guys/gals earlier in my [README.md](https://github.com/reveng007/reveng_rtkit#note) file that I haven't used _tidy()_, _sys_module_hide_rootkit()_ and _sys_module_show_rootkit()_. Now, I will be discussing about the reasons behind that decision.
+I have told you guys/gals earlier in my [README.md](https://github.com/reveng007/reveng_rtkit#note) file that I haven't used _tidy()_, _sys_module_hide_rootkit()_ and _sys_module_show_rootkit()_. Now, I will be discussing about the reasons behind that decision.
 
-    Under the title, [**Part2: Hiding LKM from _lsmod_,  _/proc/modules_ file, _/proc/kallsyms_ file and _/sys/module/[THIS_MODULE]/_ directory**](https://github.com/reveng007/reveng_rtkit/blob/main/Detailed_blog_README.md#part2-hiding-lkm-from-lsmod--procmodules-file-prockallsyms-file-and-sysmodulethis_module-directory) in the last para of Targeting _/sys/module/_ directory, I have told that we can't re-add our rootkit's entry point to the responsible linkedlist once we have removed that particular kernel object of our rootkit LKM. 
+Under the title, [**Part2: Hiding LKM from _lsmod_,  _/proc/modules_ file, _/proc/kallsyms_ file and _/sys/module/[THIS_MODULE]/_ directory**](https://github.com/reveng007/reveng_rtkit/blob/main/Detailed_blog_README.md#part2-hiding-lkm-from-lsmod--procmodules-file-prockallsyms-file-and-sysmodulethis_module-directory) in the last para of Targeting _/sys/module/_ directory, I have told that we can't re-add our rootkit's entry point to the responsible linkedlist once we have removed that particular kernel object of our rootkit LKM. 
 
-    I will only be explaining the core part related to _"/sys/module/"_ here, the `IOCTL portion` is discussed in the later portion of the blog.
+I will only be explaining the core part related to _"/sys/module/"_ here, the `IOCTL portion` is discussed in the later portion of the blog.
 
-    According to [Page: 7 theswissbay.pdf](https://theswissbay.ch/pdf/Whitepaper/Writing%20a%20simple%20rootkit%20for%20Linux%20-%20Ormi.pdf), the tidy() function is used to do some "cleanups", i.e., setting some pointers to NULL.
+According to [Page: 7 theswissbay.pdf](https://theswissbay.ch/pdf/Whitepaper/Writing%20a%20simple%20rootkit%20for%20Linux%20-%20Ormi.pdf), the tidy() function is used to do some "cleanups", i.e., setting some pointers to NULL.
 
-    If we don't set some pointers to NULL, we can cause Oops during unloading rootkit. This is because, during unloading a module, Kernel will delete entry in _/sys/module_ directory for that module. As we have already deleted that entry, kernel can't find that specific entry for our LKM module in _/sys/module_ directory to delete it, therefore kernel can't unload our rootkit LKM.
+If we don't set some pointers to NULL, we can cause Oops during unloading rootkit. This is because, during unloading a module, Kernel will delete entry in _/sys/module_ directory for that module. As we have already deleted that entry, kernel can't find that specific entry for our LKM module in _/sys/module_ directory to delete it, therefore kernel can't unload our rootkit LKM.
+![](https://github.com/reveng007/reveng_rtkit/blob/main/img/unable_to_rmmod.png?raw=true)
 
-    ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/unable_to_rmmod.png?raw=true)
+In this case, tidy() function is not used. 
 
-    In this case, tidy() function is not used. 
+It is the tidy() function, that I have used: [Page: 15 theswissbay.pdf](https://theswissbay.ch/pdf/Whitepaper/Writing%20a%20simple%20rootkit%20for%20Linux%20-%20Ormi.pdf)
 
-    It is the tidy() function, that I have used: [Page: 15 theswissbay.pdf](https://theswissbay.ch/pdf/Whitepaper/Writing%20a%20simple%20rootkit%20for%20Linux%20-%20Ormi.pdf)
+I have implemented the `tidy()` in the entry function my rtkit.c file (rootkit_init()). Just uncomment `tidy()` from [line:111](https://github.com/reveng007/reveng_rtkit/blob/47dad2e251b80a46999c84507befded6c521933e/kernel_src/reveng_rtkit.c#L111) and [line:294](https://github.com/reveng007/reveng_rtkit/blob/47dad2e251b80a46999c84507befded6c521933e/kernel_src/reveng_rtkit.c#L294).
+Then also, I got the same result. 
+![](https://github.com/reveng007/reveng_rtkit/blob/main/img/unable_to_rmmod.png?raw=true)
 
-    I have implemented the `tidy()` in the entry function my rtkit.c file (rootkit_init()). Just uncomment `tidy()` from [line:111](https://github.com/reveng007/reveng_rtkit/blob/47dad2e251b80a46999c84507befded6c521933e/kernel_src/reveng_rtkit.c#L111) and [line:294](https://github.com/reveng007/reveng_rtkit/blob/47dad2e251b80a46999c84507befded6c521933e/kernel_src/reveng_rtkit.c#L294).
-    Then also, I got the same result. 
+I was searching for other ways, like using any function related to kobject. I found out [kobject_add()](https://kernel.org/doc/html/latest/driver-api/basics.html#c.kobject_add), which I have implemented in [sys_module_show_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/d9a83f3b94b8aa5206ff46b09b356360ba584649/kernel_src/include/hide_show_helper.h#L155). Then also I found no result. 
 
-    ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/unable_to_rmmod.png?raw=true)
+This the reason why I have added this [NOTE](https://github.com/reveng007/reveng_rtkit#note) in the README.md file of the **reveng_rtkit** repo.
 
-    I was searching for other ways, like using any function related to kobject. I found out [kobject_add()](https://kernel.org/doc/html/latest/driver-api/basics.html#c.kobject_add), which I have implemented in [sys_module_show_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/d9a83f3b94b8aa5206ff46b09b356360ba584649/kernel_src/include/hide_show_helper.h#L155). Then also I found no result. 
-
-    This the reason why I have added this [NOTE](https://github.com/reveng007/reveng_rtkit#note) in the README.md file of the **reveng_rtkit** repo.
-
-    If you viewers have any idea of how to hide our LKM from `/sys/module/` without creating any discrepancies, in order to deceive usermode programs, please let me know. If I get any other method to get away with this very scenario, I will be updating my LKM rootkit as well as this blog based on that.
+If you viewers have any idea of how to hide our LKM from `/sys/module/` without creating any discrepancies, in order to deceive usermode programs, please let me know. If I get any other method to get away with this very scenario, I will be updating my LKM rootkit as well as this blog based on that.
 
 ----
 #### Part4: Protecting LKM from from being rmmod'ed (or unremovable):
 
 Function name, where it is implemented in my project: [protect_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/reveng_rtkit.c#L165)
-
 I took this concept from [nurupo's](https://github.com/nurupo) repo named: [rootkit](https://github.com/nurupo/rootkit/blob/56c43b3cc74f0db4739065d9276fcf1236273c5a/rootkit.c#L606). We will be using `try_module_get()` kernel function from `module.h` library in order to protect our LKM rootkit from being rmmod'ed.
 
 ```c
