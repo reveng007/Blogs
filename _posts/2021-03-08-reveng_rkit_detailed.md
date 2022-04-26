@@ -73,14 +73,14 @@ Other three methods are:
 
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog3.png?raw=true)
 
-1. _`/proc/kallsyms`_ file (procfs)
+2. _`/proc/kallsyms`_ file (procfs)
     - Extracts and stores all the non-stack/dynamically loaded kernel modules symbols and builds a data blob that can be linked into that kernel for use by debuggers.
     - In other words, it has the whole kernel mapping in one place.
     - This means, this file will also store symbols from our already loaded rootkit LKM.
 
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog4.png?raw=true)
 
-1. _`/sys/module/[THIS_MODULE]/`_ directory (sysfs)
+3. _`/sys/module/[THIS_MODULE]/`_ directory (sysfs)
     - It is also a virtual filesystem resides in RAM.
     - The only difference between sysfs and procfs is the ***mapping capability*** of sysfs.
     - It maps <ins>kernel subsystem</ins>, <ins>device drivers</ins> in their <ins>hierarchical order</ins>.
@@ -113,12 +113,10 @@ You can also use linux local source code which comes prepackaged with very linux
 
 1. <ins>Targeting _"lsmod"_, _"/proc/modules"_ file, and _"/proc/kallsyms"_ file</ins>
 
-&nbsp;
-  Function name, where it is implemented in my project: [proc_lsmod_hide_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L45)
-&nbsp;
-  In header file named ***"module.h"***, structure named, **struct module** is present, in which there is a member named, **list** (struct list_head list) is defined, which is actually responsible for storing **all list of loaded LKMs**.
-  We will be deleting our rootkit module from `list` right? Here, THIS_MODULE is acting as a pointer to a "module structure". Our rootkit module will be represented by THIS_MODULE.
-&nbsp;
+Function name, where it is implemented in my project: [proc_lsmod_hide_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L45)
+
+In header file named ***"module.h"***, structure named, **struct module** is present, in which there is a member named, **list** (struct list_head list) is defined, which is actually responsible for storing **all list of loaded LKMs**.\
+We will be deleting our rootkit module from `list` right? Here, THIS_MODULE is acting as a pointer to a "module structure". Our rootkit module will be represented by THIS_MODULE.
 ```c
 // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/module.h
 // elixir.bootlin: pattern: module
@@ -168,9 +166,9 @@ image:
 
 > ***Now we can hide our rootkit LKM from **_`lsmod`_ command, _`/proc/modules`_ file (procfs)** and **_`/proc/kallsyms`_ file (procfs) !***
 
-1. <ins>Targeting _/sys/modules_ directory</ins>
+2. <ins>Targeting _/sys/modules_ directory</ins>
 
-    Function name, where it is implemented in my project: [sys_module_hide_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L85)
+Function name, where it is implemented in my project: [sys_module_hide_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L85)
 
     Then,
     What about _"/sys/module/<THIS_MODULE>/"_ directory ?
@@ -192,8 +190,8 @@ image:
         ...
         };
 ```
-We can see this very portion of structure named **module** is responsible for _`/* Sysfs stuff. */`_.
-    So, we became sure _"module_kobject"_ can be the one.
+We can see this very portion of structure named **module** is responsible for _`/* Sysfs stuff. */`_.\
+So, we became sure _"module_kobject"_ can be the one.
 
 I searched again but now with "module_kobject" pattern in the same path, to see where is this structure used. Fortunately, that very part is documented well enough to save me (=n00b) from eyeballing all around the gigantic _"module.h"_ file. Although there is no guarantee that I would have become sure that _"module_kobject"_ gonna be the main point of attraction even after searching through the whole file in absence of documentation.
 
@@ -201,47 +199,45 @@ So, thanks to <ins>Kernel Developers!!!</ins>.
 
 Anyways...
 ```c
-    // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/module.h
-    // elixir.bootlin: pattern: module_kobject
+// pwd: /lib/modules/5.11.0-49-generic/build/include/linux/module.h
+// elixir.bootlin: pattern: module_kobject
 
-    struct module_kobject {
-              struct kobject kobj;
-              struct module *mod;
-              struct kobject *drivers_dir;
-              struct module_param_attrs *mp;
-              struct completion *kobj_completion;
-    } __randomize_layout;
+struct module_kobject {
+	struct kobject kobj;
+	struct module *mod;
+	struct kobject *drivers_dir;
+	struct module_param_attrs *mp;
+	struct completion *kobj_completion;
+} __randomize_layout;
 ```
-&nbsp;
-    So now, we can see that _"module_kobject"_ has member named _"struct kobject kobj"_.
-    Lets find out **kobject structure**.
-&nbsp;
-    It is present in _"/lib/modules/5.11.0-49-generic/build/include/linux/kobject.h"_ path.
-```c
-    // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kobject.h
-    // elixir.bootlin: pattern: kobject
-    struct kobject {
-          ...
-          struct list_head        entry;
-          ...
-    };
-```
-&nbsp;
-    `struct list_head` can be found in header file named ***"list.h"***.
-```c
-    // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/list.h
-    // elixir.bootlin: pattern: list_head
+So now, we can see that _"module_kobject"_ has member named _"struct kobject kobj"_.\
+Lets find out **kobject structure**.
 
-    struct  list_head {
-        struct list_head *next, *prev;
-    };
+It is present in _"/lib/modules/5.11.0-49-generic/build/include/linux/kobject.h"_ path.
+```c
+// pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kobject.h
+// elixir.bootlin: pattern: kobject
+struct kobject {
+	...
+	struct list_head        entry;
+	...
+};
+```
+`struct list_head` can be found in header file named ***"list.h"***.
+```c
+// pwd: /lib/modules/5.11.0-49-generic/build/include/linux/list.h
+// elixir.bootlin: pattern: list_head
+
+struct  list_head {
+	struct list_head *next, *prev;
+};
 ```
 Again the same case, just like **procfs** and **lsmod** scenario. We will simply delete the **kobject mapping of our rootkit module** from that structure which is responsible for storing it as a LKM kobject.
     
-In header file named ***"kobject.h"***, structure named, **struct kobject** is present, in which there is a member named, **entry** (struct list_head entry) is defined, which is actually responsible for storing **kobject mapping caused due to our loaded rootkit LKM**./
+In header file named ***"kobject.h"***, structure named, **struct kobject** is present, in which there is a member named, **entry** (struct list_head entry) is defined, which is actually responsible for storing **kobject mapping caused due to our loaded rootkit LKM**.
     
-We're gonna delete 2 things:
-1. Delete our rootkit LKM from **`/sys/module/`** directory with the help of `kobject_del()`.
+We're gonna delete 2 things:/
+1. Delete our rootkit LKM from **`/sys/module/`** directory with the help of `kobject_del()`./
 But what will be our <ins>parameter value</ins>?
 
 We will be deleting our module right? It will be expressed by `THIS_MODULE`. So we will deleting `THIS_MODULE` in such a way that kobject related to it also gets deleted.
