@@ -231,7 +231,8 @@ Again the same case, just like **procfs** and **lsmod** scenario. We will simply
     
 In header file named ***"kobject.h"***, structure named, **struct kobject** is present, in which there is a member named, **entry** (struct list_head entry) is defined, which is actually responsible for storing **kobject mapping caused due to our loaded rootkit LKM**.
     
-We're gonna delete 2 things:\
+We're gonna delete 2 things:
+
 1. Delete our rootkit LKM from **`/sys/module/`** directory with the help of `kobject_del()`.\
 But what will be our <ins>parameter value</ins>?
 
@@ -302,16 +303,16 @@ struct kobject {
 	...
 };
 ```
-	```
-	//parameter to be inputed to list_del() in this scenario:
-	/*
-	* 1. THIS_MODULE
-	* 2. mkobj
-	* 3. kobj
-	* 4. entry
-	*/
+```
+//parameter to be inputed to list_del() in this scenario:
+/*
+* 1. THIS_MODULE
+* 2. mkobj
+* 3. kobj
+* 4. entry
+*/
 
-	&THIS_MODULE->mkobj.kobj.entry
+&THIS_MODULE->mkobj.kobj.entry
 ```
 1st three, (1,2,3) are just the same as previous case. Just adding `entry` in this context.
     
@@ -327,27 +328,26 @@ struct kobject {
 
 Function name, where it is implemented in my project: [proc_lsmod_show_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L125)
 
-   1. In `proc_lsmod_show_rootkit()`, our rootkit module is just added back to main list of modules, where it was previously.
-   2. We will actually store the location of the previously loaded LKM so that we can add our loaded rootkit LKM just after that particular stored location, later according to our need. This also helps to preserve the <ins>Serial order of our rootkit LKM</ins> to avoid suspicion.
+1. In `proc_lsmod_show_rootkit()`, our rootkit module is just added back to main list of modules, where it was previously.
+1. We will actually store the location of the previously loaded LKM so that we can add our loaded rootkit LKM just after that particular stored location, later according to our need. This also helps to preserve the <ins>Serial order of our rootkit LKM</ins> to avoid suspicion.
 
-        **For adding our loaded <ins>rootkit LKM</ins> back to the main module linked list**:
+**For adding our loaded <ins>rootkit LKM</ins> back to the main module linked list**:
 ```c
-          // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/list.h
-          // elixir.bootlin: pattern: list_add
+// pwd: /lib/modules/5.11.0-49-generic/build/include/linux/list.h
+// elixir.bootlin: pattern: list_add
 
-          /**
-          * list_add - add a new entry
-          * @new: new entry to be added
-          * @head: list head to add it after
-          *
-          * Insert a new entry after the specified head.
-          * This is good for implementing stacks.
-          */
-          static inline void list_add(struct list_head *new, struct list_head *head)
-          {
-                  __list_add(new, head, head->next);
-          }
-
+/**
+* list_add - add a new entry
+* @new: new entry to be added
+* @head: list head to add it after
+*
+* Insert a new entry after the specified head.
+* This is good for implementing stacks.
+*/
+static inline void list_add(struct list_head *new, struct list_head *head)
+{
+	__list_add(new, head, head->next);
+}
 ```
 ----
 2. Targeting _"/sys/module/"_ directory:
