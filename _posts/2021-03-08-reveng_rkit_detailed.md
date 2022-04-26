@@ -516,8 +516,8 @@ OR,
 For more information about Linux Log level: [visit-linuxconfig.org](https://linuxconfig.org/introduction-to-the-linux-kernel-log-levels).
 
 -----
-Let's discuss the ***IOCTL method in LKM*** bit by bit:\
-1. Use cases of the libraries that were used for IOCTL purposes:
+Let's discuss the ***IOCTL method in LKM*** bit by bit:
+a) Use cases of the libraries that were used for IOCTL purposes:
 ```c
 #include <linux/fs.h>           /* Related to file structure */
 #include <linux/cdev.h>         /* Character device related stuff */
@@ -530,14 +530,14 @@ Other libraries that were mentioned in Embetronicx [github](https://github.com/E
 ### NOTE:
 > If any viewers see, using those omitted libraries are essential, please let me know!
 
-2. For reading and writing into device files:
+b) For reading and writing into device files:
 ```c
 #define WR_VALUE _IOW('a','a',int32_t*)
 #define RD_VALUE _IOR('a','b',int32_t*)
 ```
 Format of writing macro to manipulate device file: `#define “IOCTL Type” _IO(num1, num2, argument type)`, [source](https://linuxhint.com/c-ioctl-function-usage/).
 
-3. In order to read commands from registered Character Device Driver (i.e. commands which are stored inside Character Device Driver from <ins>Userspace</ins>), I created an array named **`value`** with size of MAX_LIMIT(=20) to store it and be compared against those provided/hardcoded commands present in the rootkit.
+c) In order to read commands from registered Character Device Driver (i.e. commands which are stored inside Character Device Driver from <ins>Userspace</ins>), I created an array named **`value`** with size of MAX_LIMIT(=20) to store it and be compared against those provided/hardcoded commands present in the rootkit.
 
 ```c
 // For size of array
@@ -581,7 +581,7 @@ switch(cmd) {
 ```
 I'm skipping all those string comparisons present after this snippet, as it is pretty much an easy thing to understand, same as C programming in Usermode.
 
-4. Registering and Unregistering the Character Device:
+d) Registering and Unregistering the Character Device:
 
 If you follow my project [repo](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/reveng_rtkit.c#L322), you can get the concept of registering, initializing and unregistering the character device file.
 
@@ -593,7 +593,7 @@ static struct class *dev_class;
 static struct cdev etx_cdev;
 ```
 
-5. What about ***`struct file_operations`***?
+e) What about ***`struct file_operations`***?
 
 In my [repo](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/reveng_rtkit.c#L81), this portion is also well documented.\
 This structure is actually essential for interracting with ***`Device Files`*** by ***`Device Drivers`***.
