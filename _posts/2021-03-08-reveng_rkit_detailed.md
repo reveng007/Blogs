@@ -459,7 +459,7 @@ If you now go and check out my code portion, you will understand the scenario.
 
 Till now, We all came to know how to do stuff in kernel using LKM rootkit. But how to control the LKM rootkit? how to send command to the rootkit via userspace?
 
-According to my knowledge, it can be done in 2 ways:
+According to my knowledge, it can be done in 2 ways:\
 A) `IOCTL(Input Output ConTroL) method`
 B) `Syscall Interception/ Hijacking method`
 
@@ -516,8 +516,7 @@ OR,
 For more information about Linux Log level: [visit-linuxconfig.org](https://linuxconfig.org/introduction-to-the-linux-kernel-log-levels).
 
 -----
-Let's discuss the ***IOCTL method in LKM*** bit by bit:
-
+Let's discuss the ***IOCTL method in LKM*** bit by bit:\
 1. Use cases of the libraries that were used for IOCTL purposes:
 ```c
 #include <linux/fs.h>           /* Related to file structure */
@@ -527,11 +526,10 @@ Let's discuss the ***IOCTL method in LKM*** bit by bit:
 #include <linux/uaccess.h>      /* copy_to_user() and copy_from_user() */
 #include <linux/ioctl.h>        /* IOCTL operation */
 ```
-Other libraries that were mentioned in Embetronicx [github](https://github.com/Embetronicx/Tutorials/blob/master/Linux/Device_Driver/IOCTL/driver.c) repo relating to IOCTL, is not needed according to my knowledge acquired after creating the reveng_rtkit project.
-
+Other libraries that were mentioned in Embetronicx [github](https://github.com/Embetronicx/Tutorials/blob/master/Linux/Device_Driver/IOCTL/driver.c) repo relating to IOCTL, is not needed according to my knowledge acquired after creating the reveng_rtkit project.\
 ### NOTE:
 > If any viewers see, using those omitted libraries are essential, please let me know!
-        
+
 2. For reading and writing into device files:
 ```c
 #define WR_VALUE _IOW('a','a',int32_t*)
