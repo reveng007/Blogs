@@ -1,5 +1,6 @@
 # How did I approach making reveng_rtkit? 
 
+##### READING TIME: 53 MIN READ
 
 ### Why am I writing this blog?
 I just wanted to share my experience with all of you guys/gals, which I learned while creating this LKM based rootkit.
