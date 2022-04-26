@@ -159,31 +159,31 @@ So,
 image:
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog7.png?raw=true)
 
-> ***Now we can hide our rootkit LKM from **_`lsmod`_ command, _`/proc/modules`_ file (procfs)** and **_`/proc/kallsyms`_ file (procfs) !***
+> Now we can hide our rootkit LKM from **_`lsmod`_ command, _`/proc/modules`_ file (procfs)** and **_`/proc/kallsyms`_ file (procfs) !**
 
 2. <ins>Targeting _/sys/modules_ directory</ins>
 
 Function name, where it is implemented in my project: [sys_module_hide_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L85)
 
-    Then,
-    What about _"/sys/module/<THIS_MODULE>/"_ directory ?
+Then,\
+What about _"/sys/module/<THIS_MODULE>/"_ directory ?
 
-    I searched "kobject" pattern in _"/lib/modules/5.11.0-49-generic/build/include/linux/module.h"_ path and I got the structure named, "**module_kobject**"
+I searched "kobject" pattern in _"/lib/modules/5.11.0-49-generic/build/include/linux/module.h"_ path and I got the structure named, "**module_kobject**"
 
 ```c
-    // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/module.h
-    // elixir.bootlin: pattern: kobject
+// pwd: /lib/modules/5.11.0-49-generic/build/include/linux/module.h
+// elixir.bootlin: pattern: kobject
 
-    struct module {
-          ...
-          /* Sysfs stuff. */
-        struct module_kobject mkobj;
-        struct module_attribute *modinfo_attrs;
-        const char *version;
-        const char *srcversion;
-        struct kobject *holders_dir;
-        ...
-        };
+struct module {
+	...
+	/* Sysfs stuff. */
+	struct module_kobject mkobj;
+	struct module_attribute *modinfo_attrs;
+	const char *version;
+	const char *srcversion;
+	struct kobject *holders_dir;
+	...
+};
 ```
 We can see this very portion of structure named **module** is responsible for _`/* Sysfs stuff. */`_.\
 So, we became sure _"module_kobject"_ can be the one.
@@ -231,96 +231,96 @@ Again the same case, just like **procfs** and **lsmod** scenario. We will simply
     
 In header file named ***"kobject.h"***, structure named, **struct kobject** is present, in which there is a member named, **entry** (struct list_head entry) is defined, which is actually responsible for storing **kobject mapping caused due to our loaded rootkit LKM**.
     
-We're gonna delete 2 things:/
-1. Delete our rootkit LKM from **`/sys/module/`** directory with the help of `kobject_del()`./
+We're gonna delete 2 things:\
+1. Delete our rootkit LKM from **`/sys/module/`** directory with the help of `kobject_del()`.\
 But what will be our <ins>parameter value</ins>?
 
 We will be deleting our module right? It will be expressed by `THIS_MODULE`. So we will deleting `THIS_MODULE` in such a way that kobject related to it also gets deleted.
 ```c
-          // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kobject.h
-          // elixir.bootlin: pattern: kobject_del
+// pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kobject.h
+// elixir.bootlin: pattern: kobject_del
 
-          extern void kobject_del(struct kobject *kobj);
+extern void kobject_del(struct kobject *kobj);
 ```
 ```c
-          // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/module.h
-          // elixir.bootlin: pattern: module
+// pwd: /lib/modules/5.11.0-49-generic/build/include/linux/module.h
+// elixir.bootlin: pattern: module
 
-          struct module {
-                ...
-                /* Sysfs stuff. */
-                struct module_kobject mkobj;
-                ...
-                };
+struct module {
+	...
+	/* Sysfs stuff. */
+	struct module_kobject mkobj;
+	...
+};
 ```
 ```c
-          //pwd: /lib/modules/5.11.0-49-generic/build/include/linux/module.h
-          // elixir.bootlin: pattern: module_kobject
+//pwd: /lib/modules/5.11.0-49-generic/build/include/linux/module.h
+// elixir.bootlin: pattern: module_kobject
 
-          struct module_kobject {
-          struct kobject kobj;
-	        struct module *mod;
-	        struct kobject *drivers_dir;
-  	      struct module_param_attrs *mp;
-	        struct completion *kobj_completion;
-          } __randomize_layout;
+struct module_kobject {
+	struct kobject kobj;
+	struct module *mod;
+	struct kobject *drivers_dir;
+	struct module_param_attrs *mp;
+	struct completion *kobj_completion;
+} __randomize_layout;
 ```
 ```c
-          // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kobject.h
-          // elixir.bootlin: pattern: kobject
+// pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kobject.h
+// elixir.bootlin: pattern: kobject
 
-          struct kobject {
-	              const char		*name;
-	              struct list_head	entry;
-  	            struct kobject		*parent;
-	              struct kset		*kset;
-	              struct kobj_type	*ktype;
-  	            struct kernfs_node	*sd; /* sysfs directory entry */
-	              struct kref		kref;
-              #ifdef CONFIG_DEBUG_KOBJECT_RELEASE
-	              struct delayed_work	release;
-              #endif
-	              unsigned int state_initialized:1;
-	              unsigned int state_in_sysfs:1;
-	              unsigned int state_add_uevent_sent:1;
-	              unsigned int state_remove_uevent_sent:1;
-	              unsigned int uevent_suppress:1;
-          };
+struct kobject {
+		const char		*name;
+		struct list_head	entry;
+		struct kobject		*parent;
+		struct kset		*kset;
+		struct kobj_type	*ktype;
+		struct kernfs_node	*sd; /* sysfs directory entry */
+		struct kref		kref;
+      #ifdef CONFIG_DEBUG_KOBJECT_RELEASE
+	      struct delayed_work	release;
+      #endif
+	      unsigned int state_initialized:1;
+	      unsigned int state_in_sysfs:1;
+	      unsigned int state_add_uevent_sent:1;
+	      unsigned int state_remove_uevent_sent:1;
+	      unsigned int uevent_suppress:1;
+};
 ```
 ```
-          // parameter to be inputed to kobject_del():
-
-          &THIS_MODULE->mkobj.kobj
+// parameter to be inputed to kobject_del():
+&THIS_MODULE->mkobj.kobj
 ```
 2. Delete the kobject, which is mapped by our rootkit LKM from "entry" list using `list_del()`. We will be using the same `list_del()` function that we used before to delete our rootkit LKM from _`lsmod`_ command, _`/proc/modules`_ file (procfs) and _`/proc/kallsyms`_ file (procfs), but this time with different <ins>parameter value</ins>. [source: [page-6-last-paragraph](https://theswissbay.ch/pdf/Whitepaper/Writing%20a%20simple%20rootkit%20for%20Linux%20-%20Ormi.pdf)]
 ```c
-          // pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kobject.h
-          // elixir.bootlin: pattern: entry
+// pwd: /lib/modules/5.11.0-49-generic/build/include/linux/kobject.h
+// elixir.bootlin: pattern: entry
 
-          struct kobject {
-                  ...
-                  struct list_head        entry;
-                  ...
-          };
-          ```
-          ```
-          //parameter to be inputed to list_del() in this scenario:
-          /*
-           * 1. THIS_MODULE
-           * 2. mkobj
-           * 3. kobj
-           * 4. entry
-           */
-    
-          &THIS_MODULE->mkobj.kobj.entry
+struct kobject {
+	...
+	struct list_head        entry;
+	...
+};
+```
+	```
+	//parameter to be inputed to list_del() in this scenario:
+	/*
+	* 1. THIS_MODULE
+	* 2. mkobj
+	* 3. kobj
+	* 4. entry
+	*/
+
+	&THIS_MODULE->mkobj.kobj.entry
 ```
 1st three, (1,2,3) are just the same as previous case. Just adding `entry` in this context.
     
-> ***Now we can hide our rootkit LKM from **`/sys/module/`** directory (_LKM logging directory_) !***
+> Now we can hide our rootkit LKM from **`/sys/module/`** directory (_LKM logging directory_) !
 
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog8.png?raw=true)
 
 ##### But there is a problem to use this function. We cannot re-enable our LKM rootkit to `show` mode again, i.e., we can't `rmmod` the rootkit according to our will. The only way left is rebooting the whole machine. link: [reveng_rtkit repo](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/reveng_rtkit.c#L94). I will explain it later in this blog.
+
 ----
 #### Part3: Revealing LKM from _lsmod_,  _/proc/modules_ file, _/proc/kallsyms_ file and _/sys/module/[THIS_MODULE]/_ directory according to our will:
 1. Targeting _"lsmod"_, _"/proc/modules"_ file, and _"/proc/kallsyms"_ file
