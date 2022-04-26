@@ -168,7 +168,7 @@ image:
 
 > ***Now we can hide our rootkit LKM from **_`lsmod`_ command, _`/proc/modules`_ file (procfs)** and **_`/proc/kallsyms`_ file (procfs) !***
 
-2. <ins>Targeting _/sys/modules_ directory</ins>
+1. <ins>Targeting _/sys/modules_ directory</ins>
 
     Function name, where it is implemented in my project: [sys_module_hide_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L85)
 
