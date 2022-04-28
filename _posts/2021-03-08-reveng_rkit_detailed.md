@@ -2,7 +2,7 @@
 
 ##### READING TIME: 53 MIN READ
 
-##### GitHub repo: [https://github.com/reveng007/reveng_rtkit](https://github.com/reveng007/reveng_rtkit)
+##### GitHub repo: <ins>[https://github.com/reveng007/reveng_rtkit](https://github.com/reveng007/reveng_rtkit)</ins>
 
 ### Why am I writing this blog?
 I just wanted to share my experience with all of you guys/gals, which I learned while creating this LKM based rootkit.
