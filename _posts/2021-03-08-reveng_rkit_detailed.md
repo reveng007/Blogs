@@ -866,6 +866,8 @@ static inline void write_cr0_forced(unsigned long val)
 	asm volatile("mov %0, %%cr0" : "+r"(val), "+m"(__force_order));
 }
 ```
+Yes!!, `asm volatile("mov %0, %%cr0" : "+r"(val), "+m"(__force_order))` is **inline assembly** implementation in C (Linux Kernel Programming), more specifically, **extended inline assembly implementation**.
+
 c) Visit: [repo](https://github.com/reveng007/reveng_rtkit/blob/055b7dce57cf1317f13fb3bd141e21c3ec82c5dc/kernel_src/include/hook_syscall_helper.h#L323)
 
 Now, we will be using this function, `write_cr0_forced` to set WP flag to zero in cr0 register.
