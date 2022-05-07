@@ -1,6 +1,6 @@
 # How did I approach making reveng_rtkit? 
 
-##### READING TIME: 53 MIN READ
+##### READING TIME: 53 min.
 
 ##### GitHub repo: <ins>[https://github.com/reveng007/reveng_rtkit](https://github.com/reveng007/reveng_rtkit)</ins>
 
