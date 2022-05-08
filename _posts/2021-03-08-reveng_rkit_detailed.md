@@ -329,6 +329,11 @@ struct kobject {
 
 ----
 #### Part3: <ins>Revealing LKM from _lsmod_,  _/proc/modules_ file, _/proc/kallsyms_ file and _/sys/module/[THIS_MODULE]/_ directory according to our will</ins>:
+
+We have to have our rootkit to be revealed at some point or the other, otherwise we can't rmmod or rookit out from kernel. Revealing rootkit means to add the object and kobject related to our LKM module the main list of struct/linkedlist. If, We don't add our rootkit module back to the responsible linkedlist, kernel can't trace our module, and hence it can't rmmod it. If you go through this blog till the end, you wil get my point.
+
+Actually, the purpose of revealing our LKM rootkit is to rmmod the rootkit out of the kernel. We can see it as somewhat of a ***kill switch button!!!***.
+
 A) <ins>Targeting _"lsmod"_, _"/proc/modules"_ file, and _"/proc/kallsyms"_ file</ins>:
 
 Function name, where it is implemented in my project: [proc_lsmod_show_rootkit()](https://github.com/reveng007/reveng_rtkit/blob/7ae65c6edaeab1b9bea0e8aef29803a6e1f48135/kernel_src/include/hide_show_helper.h#L125)
@@ -623,7 +628,7 @@ It was all to know about **IOCTL** in **Kernelmode**, now let's jump to the ***U
 The code is present in [here](https://github.com/reveng007/reveng_rtkit/blob/main/user_src/client_usermode.c). I followed Embetronicx [github](https://github.com/Embetronicx/Tutorials/blob/master/Linux/Device_Driver/IOCTL/test_app.c) repo. I don't think this code needs that much of explanation to explain it's working, it's pretty much self-explanatory.
 
 ### NOTE:
-> I heardly found any rootkit utilizing IOCTL mechanism in them, those which I found are honestly, out of my grasp, so I thought that I should give it a go and thus, implemented one in my rootkit despite keeping the ultimate goal the same as other public rootkits. This actually helped to `bypass` _signature detection_ of **rkhunter antirootkit**. [visit](https://github.com/reveng007/reveng_rtkit#bypassing-rkhunter-antirootkit).
+> I heardly found any rootkit utilizing IOCTL mechanism in them, those which I found are honestly, out of my grasp, so I thought that I should give it a go and thus, implemented one in my rootkit despite keeping the ultimate goal the same as other public rootkits.
 
 B) ***`Syscall Interception/ Hijacking method`***:
 
@@ -2009,6 +2014,15 @@ Testing the Code:
 Let's see how it performs with ***rkhunter*** antirootkit:
 
 [![asciicast](https://asciinema.org/a/488606.svg)](https://asciinema.org/a/488606)
+
+The reason behind bypassing ***rkhunter*** antirootkit, is to hide our module from the **list struct**. Because when the ***rkhunter*** antirootkit is checking the circular doubly-linked list named, **list**, it is not getting the module name of our rootkit. But if we enable our rookit's enable reveal options (which I have discussed in details in this blog), we can see that our rootkit is getting detected.
+
+### NOTE:
+
+There is a catch iff our rootkit is getting detected under revealing mode.
+You can see that, it is detecting our rookit under <ins>Diamophine rootkit tag</ins>.
+
+It can happen due to the fact of applying the syscall interception technique from that project and the signature related to the syscall interception technique probably matching our rootkit and that rootkit is famous not mine! ;) 
 
 I have already explained about the reason behind that one warning in my github [README.md](https://github.com/reveng007/reveng_rtkit#bypassing-rkhunter-antirootkit).
 
