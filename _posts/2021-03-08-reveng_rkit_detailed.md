@@ -2015,16 +2015,19 @@ Let's see how it performs with ***rkhunter*** antirootkit:
 
 [![asciicast](https://asciinema.org/a/488606.svg)](https://asciinema.org/a/488606)
 
-The reason behind bypassing ***rkhunter*** antirootkit, is to hide our module from the **list struct**. Because when the ***rkhunter*** antirootkit is checking the circular doubly-linked list named, **list**, it is not getting the module name of our rootkit. But if we enable our rookit's enable reveal options (which I have discussed in details in this blog), we can see that our rootkit is getting detected.
+I have already explained about the reason behind that one warning in my github [README.md](https://github.com/reveng007/reveng_rtkit#bypassing-rkhunter-antirootkit).
+
+The reason behind bypassing ***rkhunter*** antirootkit, is to hide our module from the **list struct**. Because when the ***rkhunter*** antirootkit is checking the circular doubly-linked list named, **list**, it is not getting the module name of our rootkit. But if we enable our rookit's reveal options (which I have discussed in details in this blog), we can see that our rootkit is getting detected.
 
 ### NOTE:
-
 There is a catch iff our rootkit is getting detected under revealing mode.
 You can see that, it is detecting our rookit under <ins>Diamophine rootkit tag</ins>.
 
-It can happen due to the fact of applying the syscall interception technique from that project and the signature related to the syscall interception technique probably matching our rootkit and that rootkit is famous not mine! ;) 
+It can happen due to the fact of applying the syscall interception technique from that project and the signature related to the syscall interception technique probably matching our rootkit and also the fact, Diamorphine rootkit is famous, not mine! ;(
 
-I have already explained about the reason behind that one warning in my github [README.md](https://github.com/reveng007/reveng_rtkit#bypassing-rkhunter-antirootkit).
+> But, one thing which became clear to me is that ***rkhunter*** antirootkit, have small chunks of signatures of Diamorphine rootkit, probably each feature of Diamorphine rootkit corresponds to each unique signature. Proabably, some of those small signature chunks became similar to some of my rookit. I think, ***rkhunter*** antirootkit don't have a whole complete signature of Diamorphine rootkit, or probably it has a whole complete signature of it, apart from those small chunks of signatures.
+
+But, as long as our rootkit is hidden, there is nothing to fear about ;).
 
 With this, I have come to the end of the blog. I will be updating the blog as soon as I make some changes to my `reveng_rtkit`rootkit.
 If you have any query, you can reach me at any of my social media. Till then, see yaa!
