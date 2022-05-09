@@ -2022,7 +2022,7 @@ The reason behind bypassing ***rkhunter*** antirootkit, is to hide our module fr
 ### NOTE:
 There is a catch when our rootkit is getting detected under revealing mode, you can see that, it is detecting our rookit under <ins>Diamophine rootkit tag</ins>.
 
-It can happen due to the fact of applying the syscall interception technique from that project and the signature related to the syscall interception technique probably matching our rootkit and also the fact, Diamorphine rootkit is famous, not mine! ;(
+It can happen due to the fact of applying the syscall interception technique from that project and the signature related to the syscall interception technique probably matched our rootkit and also the fact, Diamorphine rootkit is famous, not mine! ;(
 
 > But, one thing which became clear to me is that ***rkhunter*** antirootkit, have small chunks of signatures of Diamorphine rootkit, probably each feature of Diamorphine rootkit corresponds to each unique signature. Proabably, some of those small signature chunks became similar to some of my rookit. I think, ***rkhunter*** antirootkit don't have a whole complete signature of Diamorphine rootkit, or probably it has a whole complete signature of it, apart from those small chunks of signatures.
 
