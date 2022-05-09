@@ -2020,8 +2020,7 @@ I have already explained about the reason behind that one warning in my github [
 The reason behind bypassing ***rkhunter*** antirootkit, is to hide our module from the **list struct**. Because when the ***rkhunter*** antirootkit is checking the circular doubly-linked list named, **list**, it is not getting the module name of our rootkit. But if we enable our rookit's reveal options (which I have discussed in details in this blog), we can see that our rootkit is getting detected.
 
 ### NOTE:
-There is a catch iff our rootkit is getting detected under revealing mode.
-You can see that, it is detecting our rookit under <ins>Diamophine rootkit tag</ins>.
+There is a catch when our rootkit is getting detected under revealing mode, you can see that, it is detecting our rookit under <ins>Diamophine rootkit tag</ins>.
 
 It can happen due to the fact of applying the syscall interception technique from that project and the signature related to the syscall interception technique probably matching our rootkit and also the fact, Diamorphine rootkit is famous, not mine! ;(
 
