@@ -495,7 +495,7 @@ As, Usermode application will only send command to LKM in kernel, it will only p
 ioctl(fd, WR_VALUE, (char*) str);
 ```
 and the LKM will perform `IOCTL read` from the registered _Character Device file_ to read the command and compare those commands with the hardcoded commands which are present in LKM, if those commands satisfies the condition, LKM will show output/message on _`the Kernel Log`_.\
-I also included the `IOCTL write` feature to the LKM so that if we (attacker) wants to change/ append some value to the registered Character Device Driver present in `/dev` directory named, `etx_device` externally, we will get to see the notification message being logged in _`the Kernel Log`_.
+I also included the `IOCTL write` feature to the LKM so that if we (attacker) wants to change/ append some value to the registered Character Device file present in `/dev` directory named, `etx_device` externally, we will get to see the notification message being logged in _`the Kernel Log`_.
         
 This LKM will also act as a ***Device Driver*** to handle `/dev/etx_device` Device file, [source-1st_para](https://sysprog21.github.io/lkmpg/#registering-a-device).
         
