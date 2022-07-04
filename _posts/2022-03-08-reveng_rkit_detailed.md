@@ -657,10 +657,6 @@ It is actually a table which maps linux syscalls to their corresponding syscall 
 It is somewhat like this.
 ![](https://docs.microsoft.com/en-us/security/research/project-freta/media/report-kernel-syscalls.png?raw=true)
 
-### NOTE:
-```
-This is actually the "syscall table" for windows but the concept is same.
-```
 We can see the address of syscall table from `/proc/kallsyms` file as sys_call_table is a dynamically loaded kernel modules symbol (remember this file? if not, please revisit: [link](https://github.com/reveng007/reveng_rtkit/blob/main/Detailed_blog_README.md#part1-basics-regrading-lkm-creation) ).
 
 ![](https://github.com/reveng007/reveng_rtkit/blob/main/img/Blog11.png?raw=true)
