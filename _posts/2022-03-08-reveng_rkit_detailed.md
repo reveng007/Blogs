@@ -1,4 +1,4 @@
-# How did I approach making reveng_rtkit linux LKM? 
+# How did I approach making linux LKM rootkit, "reveng_rtkit" ? 
 
 ##### READING TIME: 53 min.
 
