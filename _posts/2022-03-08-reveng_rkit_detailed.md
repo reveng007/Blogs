@@ -2013,6 +2013,9 @@ Let's see how it performs with ***rkhunter*** antirootkit:
 
 I have already explained about the reason behind that one warning in my github [README.md](https://github.com/reveng007/reveng_rtkit#bypassing-rkhunter-antirootkit).
 
+### Update (09/11/2022):
+Please see this section in my repo: [Update](https://github.com/reveng007/reveng_rtkit#update)
+
 The reason behind bypassing ***rkhunter*** antirootkit, is to hide our module from the **list struct**. Because when the ***rkhunter*** antirootkit is checking the circular doubly-linked list named, **list**, it is not getting the module name of our rootkit. But if we enable our rookit's reveal options (which I have discussed in details in this blog), we can see that our rootkit is getting detected.
 
 ### NOTE:
