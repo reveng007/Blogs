@@ -5,8 +5,8 @@ Hey hi, Soumyanil is back but with Cloud now, let’s have a look into AWS Penet
 **CloudGoat** is **Rhino Security Labs**’ “_Vulnerable by Design_” AWS deployment tool. It allows us to hone our cloud cybersecurity skills by creating and completing several **CTF** style scenarios. Each and every scenario is composed of AWS resources arranged together to create a structured learning experience. These scenarios vary in difficulty and many offer multiple paths to Flag/Goal.
 
 From ***Purple Team point of View***:\
-i. Our mission to perform Recon, identify vulnerabilities, and perfrom exploitation in order to achieve the scenario objective.\
-ii. Provide Mitigation for the above Flow that we came accross.
+i. Our mission to perform Recon, identify vulnerabilities, and perform exploitation in order to achieve the scenario objective.\
+ii. Provide Mitigation for the above Flaw that we came accross.
 
 ### <ins>Details about the Scenario :</ins>
 i. In this scenario, you are presented with a signup and login page with AWS Cognito in the backend.\
