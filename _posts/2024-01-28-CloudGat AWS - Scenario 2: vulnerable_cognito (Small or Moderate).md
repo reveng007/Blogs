@@ -7,7 +7,7 @@ Hey hi, Soumyanil is back but with Cloud now, let’s have a look into AWS Penet
 ### <ins>Details about the Scenario :</ins>
 i. In this scenario, you are presented with a signup and login page with AWS Cognito in the backend.\
 ii. You need to :\
-&nbsp;&nbsp;a. ***Bypass restrictions*** </pre>\
+&nbsp;&nbsp;a. ***Bypass restrictions*** \
 &nbsp;&nbsp;b. and ***Exploit Misconfigurations in Amazon Cognito*** in order :\
 &nbsp;&nbsp;&nbsp;&nbsp;1. ***To Elevate your privileges***\
 &nbsp;&nbsp;&nbsp;&nbsp;2. ***and get Cognito Identity Pool credentials***
