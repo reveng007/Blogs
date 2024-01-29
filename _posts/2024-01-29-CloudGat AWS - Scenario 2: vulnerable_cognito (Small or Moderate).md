@@ -38,3 +38,11 @@ Please setup the AWS CLI and AWS account prior to the above commands and create 
 
 ![](https://github.com/reveng007/reveng007.github.io/blob/main/CloudGoat/2.Scenarios-vulnerable_cognito%20(Small%20or%20Moderate)/2.ScenarioSetUp.png?raw=true)
 
+
+
+Q. BTW, What is **Amazon Cognito** ? \
+Ans: According to [AWS](https://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html):
+
+![](https://github.com/reveng007/reveng007.github.io/blob/main/CloudGoat/2.Scenarios-vulnerable_cognito%20(Small%20or%20Moderate)/3.AmazonCognito.png?raw=true)
+
+So basically, **Amazon Cognito** is a User Identity and Data Syncronization Service, which gives User a very easy time to manage their accounts connected Over Mutiple Accounts. 
