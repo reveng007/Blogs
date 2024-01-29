@@ -45,4 +45,4 @@ Ans: According to [AWS](https://docs.aws.amazon.com/cognito/latest/developerguid
 
 ![](https://github.com/reveng007/reveng007.github.io/blob/main/CloudGoat/2.Scenarios-vulnerable_cognito%20(Small%20or%20Moderate)/3.AmazonCognito.png?raw=true)
 
-So basically, **Amazon Cognito** is a User Identity and Data Syncronization Service, which gives User a very easy time to manage their accounts connected Over Mutiple Accounts. 
+So basically, **Amazon Cognito** is a User Identity and Data Syncronization Service, which gives User a very easy time to manage their accounts connected Over Mutiple Electronic Devices. 
