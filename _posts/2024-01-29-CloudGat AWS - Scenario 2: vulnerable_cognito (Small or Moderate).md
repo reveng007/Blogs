@@ -17,7 +17,7 @@ I will be using Kali Linux VM to Spin Up the Vulnerable Lab Setup.
 ### CloudGoat SetUp:
 
 To install [CloudGoat](https://github.com/RhinoSecurityLabs/cloudgoat/):
-```
+```bash
 git clone https://github.com/RhinoSecurityLabs/cloudgoat.git
 cd cloudgoat
 pip3 install -r ./requirements.txt
