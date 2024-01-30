@@ -146,5 +146,12 @@ aws cognito-idp update-user-attributes --region [region] --access-token [AccessT
 
 ![image](https://github.com/reveng007/blog/assets/61424547/26906b11-f0b4-468c-a548-c92f1a4380de)
 
+Let's check this:
+
+![image](https://github.com/reveng007/blog/assets/61424547/fff2e263-6e3b-4333-92c9-b2ca9b42f75b)
+
+> So, we are admin now!
+
+
 
 
