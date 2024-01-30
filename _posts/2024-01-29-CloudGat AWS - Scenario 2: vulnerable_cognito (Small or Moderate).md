@@ -119,7 +119,7 @@ aws cognito-idp confirm-sign-up --region [region] --client-id [ClientId] --usern
 
 ### <ins>***Objective B. Exploit Misconfigurations in Amazon Cognito***</ins>: [[T1134](https://attack.mitre.org/techniques/T1134/) - PrivEsc: Access Token Manipulation]:
 
-#### 1. With Inspect got some tokens stored in Storage Menu:
+#### 1. With Inspect option, got some tokens stored in Storage Menu:
 
 ![image](https://github.com/reveng007/blog/assets/61424547/54d14ac6-f971-4e21-a6fd-d8eb888fc20a)
 
