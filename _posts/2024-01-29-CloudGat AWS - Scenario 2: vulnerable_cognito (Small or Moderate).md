@@ -136,7 +136,7 @@ LastAuthUser :
 3072f385-94fb-4eff-8371-829f7610af7e
 ```
 
-#### 2. With the `accessToken`, I can perform PrivEsc: <ins>B.1. ***To Elevate your privileges***</ins>:
+#### 2. With the `accessToken`, I can perform PrivEsc: <ins>B.1. ***To Elevate our privileges***</ins>:
 
 We are now granting ourselves **Admin** rights:
 
