@@ -65,9 +65,9 @@ Now using [temp-mail](https://temp-mail.org/en/), I tried to Sign-Up but I faile
 
 ![](https://github.com/reveng007/reveng007.github.io/blob/main/CloudGoat/2.Scenarios-vulnerable_cognito%20(Small%20or%20Moderate)/5.SignUpEmailValidationError.png?raw=true)
 
-## ***Objective A: Bypassing email (client-side validation Check) restrictions***:
+### ***Objective A: Bypassing email (client-side validation Check) restrictions***:
 
-### 1. Inspecting Source code of Webpage:
+#### 1. Inspecting Source code of Webpage:
 
 ![image](https://github.com/reveng007/blog/assets/61424547/eb805432-0ac9-4897-8d2e-1aea2eb17721)
 
@@ -77,7 +77,7 @@ UserPoolId: 'us-east-1_mYaVxhwr7'
 ClientId: '4u4i11pmknfa2k6flrur6c3a5v'
 ```
 
-### 2. Bypassing email Client-Side validation Checks/ restrictions via AWS CLI:
+#### 2. Bypassing email Client-Side validation Checks/ restrictions via AWS CLI:
 
 Let us use this _retireved_ `ClientId` to SignUp Via AWS CLI, which would bypass _`email Client-Side validation Check/restriction`_.
 
