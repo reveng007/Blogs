@@ -261,7 +261,7 @@ enumerate-iam.py --access-key [retrieved AccessKeyId] --secret-key [SecretKey] -
 
 #### New KeyWords that we learnt (Can be used as Keyword Searching (Ctrl+F) if needed anytime):
 1. Amazon Cognito
-2. cognito-idp
+2. [cognito-idp](https://docs.aws.amazon.com/cli/latest/reference/cognito-idp/)
 3. post-confirmation lambda trigger
 4. custom attribute “custom:access”
 5. Role-based access control
