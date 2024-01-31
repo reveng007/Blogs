@@ -9,6 +9,9 @@ i. Our mission to perform Recon, identify vulnerabilities, and perform exploitat
 ii. Provide Mitigation for the above Flaw that we came accross.
 
 ### <ins>Details about the Scenario :</ins>
+
+![exploitation_route](https://github.com/reveng007/blog/assets/61424547/942a0abd-0a35-44e0-af70-d237b8145be9)
+
 i. In this scenario, you are presented with a signup and login page with AWS Cognito in the backend.\
 ii. You need to :\
 &nbsp;&nbsp;Objective A. ***Bypass restrictions*** \
