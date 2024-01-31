@@ -252,12 +252,12 @@ enumerate-iam.py --access-key [retrieved AccessKeyId] --secret-key [SecretKey] -
 ### Security Mitigation for the above Misconfigurations:
 
 
-### BTW, Destroy the scenario after completion of this lab:
+#### BTW, Destroy the scenario after completion of this lab:
 ```bash
 ./cloudgoat.py destroy vulnerable_cognito
 ```
 
-### New KeyWords We learnt (Can be used as Keyword Searching (Ctrl+F) if needed anytime):
+### New KeyWords that we learnt (Can be used as Keyword Searching (Ctrl+F) if needed anytime):
 1. Amazon Cognito
 2. cognito-idp
 3. post-confirmation lambda trigger
