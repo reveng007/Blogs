@@ -257,7 +257,9 @@ enumerate-iam.py --access-key [retrieved AccessKeyId] --secret-key [SecretKey] -
 ./cloudgoat.py destroy vulnerable_cognito
 ```
 
-### New KeyWords that we learnt (Can be used as Keyword Searching (Ctrl+F) if needed anytime):
+--------------------------------------------
+
+#### New KeyWords that we learnt (Can be used as Keyword Searching (Ctrl+F) if needed anytime):
 1. Amazon Cognito
 2. cognito-idp
 3. post-confirmation lambda trigger
@@ -266,6 +268,7 @@ enumerate-iam.py --access-key [retrieved AccessKeyId] --secret-key [SecretKey] -
 6. IAM Role
 7. another value within Logins
 
+--------------------------------------------
 
 With this, I have come to the end of the blog. I will be uploading the rest of the CloudGoat Scenarios as soon as I finish them covering myself in lab env. If you guys/gals have any query, you can reach me at any of my social media. Till then, see yaa!
 
