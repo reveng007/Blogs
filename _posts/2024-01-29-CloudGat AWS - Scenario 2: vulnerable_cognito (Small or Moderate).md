@@ -251,6 +251,67 @@ enumerate-iam.py --access-key [retrieved AccessKeyId] --secret-key [SecretKey] -
 
 ### Security Mitigation for the above Misconfigurations:
 
+1. Storing Sensitive IDs in Source Code is not allowed!
+2. Using "***pre-sign-up lambda triggers***” to perform server-side email domain validation instead of using client-side validation.
+
+#### Let's Set this Up:
+##### 1. Create a new Lambda function in the AWS Lambda console.
+
+![image](https://github.com/reveng007/blog/assets/61424547/69bdc9e3-202a-4c02-860d-f3faa4ad2c2a)
+
+![image](https://github.com/reveng007/blog/assets/61424547/c617ac75-dddf-4d25-9488-827ed4d30072)
+
+Then, Click on "Create function"!
+
+![image](https://github.com/reveng007/blog/assets/61424547/1544bb3d-9367-4d45-bbfa-115384f69f56)
+
+The code will Look Like this:
+```javascript
+export const handler = async (event, context) => {
+    try {
+        // Configure the email domain that will be allowed to automatically verify.
+        // in this case: approveddomain.com will be ecorp.com
+        //const approvedDomain = "approveddomain.com";
+        const approvedDomain = "ecorp.com";
+        
+        // Log the event information for debugging purposes.
+        console.log('Received event:', JSON.stringify(event, null, 2));
+
+        // Extract email from the request
+        const email = event.request.userAttributes.email;
+
+        // Validate the email domain
+        if (!email.endsWith('@' + approvedDomain)) {
+            // Reject the signup if the domain is not allowed
+            throw new Error('Invalid email domain. Sign-up not allowed.');
+        }
+
+        // Continue with the sign-up process if the email domain is allowed
+        event.response.emailSubject = "Signup Verification Code";
+        event.response.emailMessage = "Thank you for signing up. " + event.request.codeParameter + " is your verification code.";
+        context.done(null, event);
+    } catch (error) {
+        console.error('Error:', error.message);
+        context.done(error, event);
+    }
+};
+```
+
+After Pasting, click the `Deploy Button`:
+
+![image](https://github.com/reveng007/blog/assets/61424547/2967b826-5350-4b58-b007-c9e19f32aacf)
+
+##### 2. We will now add "Pre-SignUp Lambda Trigger" : using the created _LambdaTrigger_ function to the already Present Cognito Service.
+
+![image](https://github.com/reveng007/blog/assets/61424547/afb4debe-46ae-431f-97c1-b4d1ba455cbf)
+
+Click on the running Cognito Service/Instance:
+
+![image](https://github.com/reveng007/blog/assets/61424547/11851fd2-c1f6-4968-a9d3-88b148a8aad4)
+
+##### 3. Choose the Cognito User Pool Properties Tab:
+
+![image](https://github.com/reveng007/blog/assets/61424547/cd5f43d1-8945-42e1-ae75-d263bac7721c)
 
 #### BTW, Destroy the scenario after completion of this lab:
 ```bash
