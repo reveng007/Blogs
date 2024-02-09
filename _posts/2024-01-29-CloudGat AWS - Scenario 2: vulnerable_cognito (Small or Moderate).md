@@ -327,11 +327,9 @@ We will see that Everything is Set!
 
 Let's try to Bypass this Now:
 
-1. Via GUI Website:
+1. Via GUI Website and AWS CLI consecutively:
 
 ![image](https://github.com/reveng007/blog/assets/61424547/d879df1b-17d3-48d8-b06b-ec1dfbb73319)
-
-2. Via AWS CLI:
 
 ![image](https://github.com/reveng007/blog/assets/61424547/4e719ef6-4bb1-4559-bb98-3ad4b3a0ab38)
 
