@@ -255,7 +255,7 @@ enumerate-iam.py --access-key [retrieved AccessKeyId] --secret-key [SecretKey] -
 2. Using "***pre-sign-up lambda triggers***” to perform server-side email domain validation instead of using client-side validation.
 
 #### Let's Set this Up:
-##### 1. Create a new Lambda function in the AWS Lambda console.
+##### 1. Creating a new Lambda function in the AWS Lambda console.
 
 ![image](https://github.com/reveng007/blog/assets/61424547/69bdc9e3-202a-4c02-860d-f3faa4ad2c2a)
 
@@ -313,21 +313,53 @@ Click on the running Cognito Service/Instance:
 
 ![image](https://github.com/reveng007/blog/assets/61424547/cd5f43d1-8945-42e1-ae75-d263bac7721c)
 
+##### 4. Adding Pre-Signup Lambda Trigger:
+
+![image](https://github.com/reveng007/blog/assets/61424547/dfc1b0f2-727e-481f-9e4d-317234b6229a)
+
+Finally Click on "Add Lambda Trigger"
+
+![image](https://github.com/reveng007/blog/assets/61424547/091521b3-c2d4-46ef-aaf6-28eb7cd9cc17)
+
+We will see that Everything is Set!
+
+![image](https://github.com/reveng007/blog/assets/61424547/425eadf5-b95a-4af2-a1c2-39560ddd6333)
+
+Let's try to Bypass this Now:
+
+1. Via GUI Website:
+
+![image](https://github.com/reveng007/blog/assets/61424547/d879df1b-17d3-48d8-b06b-ec1dfbb73319)
+
+2. Via AWS CLI:
+
+![image](https://github.com/reveng007/blog/assets/61424547/4e719ef6-4bb1-4559-bb98-3ad4b3a0ab38)
+
+Working Successfully then :)
+
 #### BTW, Destroy the scenario after completion of this lab:
+
+1. Delete the Lambda Function named, **LamdaTrigger**.
+
+![image](https://github.com/reveng007/blog/assets/61424547/ef189996-138c-4f2a-a2ab-c469de57ef2d)
+
+2. Destroy the actually Env now with terraform script:
 ```bash
 ./cloudgoat.py destroy vulnerable_cognito
 ```
 
 --------------------------------------------
 
-#### New KeyWords that we learnt (Can be used as Keyword Searching (Ctrl+F) if needed anytime):
+#### New KeyWords that we learnt (can be used as Keyword Searching (Ctrl+F) if needed anytime) in this blog :
 1. Amazon Cognito
 2. [cognito-idp](https://docs.aws.amazon.com/cli/latest/reference/cognito-idp/)
 3. post-confirmation lambda trigger
 4. custom attribute “custom:access”
 5. Role-based access control
 6. IAM Role
-7. another value within Logins
+7. Other value within Logins
+8. Creating a new Lambda function
+9. Pre-SignUp Lambda Trigger
 
 --------------------------------------------
 
